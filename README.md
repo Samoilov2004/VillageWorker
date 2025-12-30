@@ -2,6 +2,7 @@
 
 Система папок и как идет разработка. Пока будем локально тестировать и без никакого докера. 
 
+```
 VillageWorker/
 │
 ├── frontend/                  # Фронтенд (React/Vue/напишите че будет)
@@ -25,3 +26,4 @@ VillageWorker/
 ├── start-project.sh           # Скрипт запуска ВСЕГО (для Mac/Linux)
 ├── README.md
 └── .env.example
+```
