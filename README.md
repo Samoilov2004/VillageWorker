@@ -5,12 +5,12 @@
 ```
 VillageWorker/
 │
-├── frontend/                  # Фронтенд (React/Vue/напишите че будет)
+├── frontend/                  # Фронтенд (React/Vue)
 │   ├── index.html
 │   ├── src/
 │   └── package.json          # npm start - запуск фронтенда
 │
-├── backend/                   # Бэкенд (Node.js/Express/напишите че будет)
+├── backend/                   # Бэкенд (Node.js/Express)
 │   ├── index.js
 │   └── package.json          # npm start - запуск бэкенда
 │
@@ -22,8 +22,12 @@ VillageWorker/
 │   ├── main-db.sql           # Скрипт создания таблиц
 │   └── ml-data.json          # Данные для ML (будет допиливаться)
 │
-├── start-project.bat          # Скрипт запуска ВСЕГО (для Windows)
-├── start-project.sh           # Скрипт запуска ВСЕГО (для Mac/Linux)
+├── scripts/                   # Вспомогательные скрипты
+│   ├── install-deps.bat      # Установка всех зависимостей (Windows)
+│   ├── install-deps.sh       # Установка всех зависимостей (Mac/Linux)
+│   ├── start-project.bat     # Запуск всего проекта (Windows)
+│   └── start-project.sh      # Запуск всего проекта (Mac/Linux)
+│
 ├── README.md
 └── .env.example
 ```
