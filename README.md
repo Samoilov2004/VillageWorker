@@ -5,12 +5,12 @@
 ```
 VillageWorker/
 │
-├── frontend/                  # Фронтенд (React/Vue)
+├── frontend/                  # Фронтенд (React/Vue/напишите на чем)
 │   ├── index.html
 │   ├── src/
 │   └── package.json          # npm start - запуск фронтенда
 │
-├── backend/                   # Бэкенд (Node.js/Express)
+├── backend/                   # Бэкенд (Node.js/Express/напишите на чем будет)
 │   ├── index.js
 │   └── package.json          # npm start - запуск бэкенда
 │
