@@ -1,32 +1,37 @@
 # VillageWorker
 
-Система папок и как идет разработка. Пока будем локально тестировать и без никакого докера. 
+Система папок и как идет разработка. Пока будем локально тестировать и без никакого докера.
 
 ```
 VillageWorker/
 │
-├── frontend/                  # Фронтенд (React/Vue/напишите на чем)
+├── frontend/ (В работе)
 │   ├── index.html
 │   ├── src/
-│   └── package.json          # npm start - запуск фронтенда
+│   └── package.json
 │
-├── backend/                   # Бэкенд (Node.js/Express/напишите на чем будет)
+├── backend/  (В работе)
 │   ├── index.js
-│   └── package.json          # npm start - запуск бэкенда
+│   └── package.json
 │
-├── ml-service/                # ML-сервис (Python/FastAPI) - Samoilov2004
+├── ml-service/ (В работе)
 │   ├── main.py
-│   └── requirements.txt      # pip install -r requirements.txt
+│   └── requirements.txt
 │
-├── databases/                
-│   ├── main-db.sql           # Скрипт создания таблиц
-│   └── ml-data.json          # Данные для ML (будет допиливаться)
+├── databases/           
+│   ├── jobs_ads.csv - изначальный датасет с прикрученными фичами
+│   ├── jobs_ads.db  - SQLite версия
+│   └── mini_jobs.csv  - версия на 100 строк, для тестирования
 │
-├── scripts/                   # Вспомогательные скрипты
+├── scripts/   (В работе)
 │   ├── install-deps.bat      # Установка всех зависимостей (Windows)
 │   ├── install-deps.sh       # Установка всех зависимостей (Mac/Linux)
 │   ├── start-project.bat     # Запуск всего проекта (Windows)
 │   └── start-project.sh      # Запуск всего проекта (Mac/Linux)
+│
+├── other/
+│   ├── pics/
+│   └── requirements.txt
 │
 ├── README.md
 └── .env.example
