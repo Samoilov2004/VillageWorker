@@ -59,6 +59,8 @@ git lfs version
 git lfs track "*.csv" 
 git lfs track "*.db" 
 
+git lfs track "*.joblib"  # Это тяжелые файлы с моделями, которые тоже так будем обрабатывать
+
 # Cоздаст файл .gitattributes
 git add .gitattributes
 ```
