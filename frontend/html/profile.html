@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="../files/images/logo/ЭТС 2 (FFCC00).png">
+    <title>ЭТС / Профиль</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="../css/media.css">
+    <link rel="stylesheet" href="../css/profile.css">
+
+    <style>
+
+        body{
+            color: white;
+            font-family: 'Comfortaa', Arial, sans-serif;
+            font-weight: 400;
+            margin: 0;
+            padding: 0;
+            background-color: #1D1D1D;
+        }
+        
+        :root {
+            --accent-blue: #2196F3;
+            --accent-blue-hover: #1976D2;
+        }
+
+        .card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 24px;
+        }
+
+        .input-field {
+            background: #262626;
+            border: 1px solid #444;
+            border-radius: 12px;
+            padding: 12px 16px;
+            width: 100%;
+            color: white;
+            transition: border-color 0.2s;
+        }
+
+        .input-field:focus {
+            border-color: var(--accent-blue);
+            outline: none;
+        }
+
+        .btn-primary {
+            background: var(--accent-blue);
+            color: white;
+            font-weight: bold;
+            padding: 12px 24px;
+            border-radius: 14px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-blue-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            border: 1px solid #444;
+            color: #aaa;
+            padding: 12px 24px;
+            border-radius: 14px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .btn-outline:hover {
+            border-color: #666;
+            color: white;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 99px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-active { background: rgba(34, 197, 94, 0.1); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.2); }
+        .status-inactive { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #333;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px; width: 18px;
+            left: 4px; bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--accent-blue); }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+        .modal-overlay {
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(4px);
+        }
+
+        #edit-map {
+            height: 220px;
+            border-radius: 16px;
+            border: 1px solid #444;
+            z-index: 10;
+        }
+
+        /* Поиск адреса */
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #262626;
+            border: 1px solid #444;
+            border-radius: 12px;
+            margin-top: 4px;
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 50;
+        }
+        .search-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            border-bottom: 1px solid #333;
+        }
+        .search-item:hover {
+            background: #333;
+        }
+        .search-item:last-child { border-bottom: none; }
+        
+        .burger_icon{
+            display: flex;
+            text-align: center;
+            margin: 0 auto;
+        }
+
+    </style>
+</head>
+<body>
+    <header>
+        <div class="menu">
+            <a class="logo" href="#"><img src="../files/images/logo/ЭТС 1_2 (FFCC00).png" width="200px" alt="Ошибка!"></a>
+            <div>
+                <a href="#">Профиль</a>
+                <a href="#">Отклики</a>
+                <a href="#">Вакансии</a>
+                <a href="#">Поддержка</a>
+            </div>
+        </div>
+        <div class="add_menu">
+            <div>
+              <img src="../files/images/icon/material-symbols_navigation-outline-rounded.png">
+              <a class="city" href="#">Москва</a>
+            </div>
+            <a href="#"><img src="../files/images/icon/material-symbols_mail-outline-rounded.png" alt="Ошибка!"></a>
+            <a href="#"><img src="../files/images/icon/material-symbols_favorite-outline-rounded.png" alt="Ошибка!"></a>
+            <a href="#"><img src="../files/images/icon/material-symbols_notifications-outline-rounded.png" alt="Ошибка!"></a>
+            <button class="create_resume">Создать резюме</button>
+        </div>
+        <div class="gorod">
+          <img src="../files/images/icon/material-symbols_navigation-outline-rounded.png">
+          <a class="city" href="#">Москва</a>
+        </div>
+        <input type="checkbox" id="burger-checkbox" class="burger-checkbox">
+            <label class="burger" for="burger-checkbox"></label>
+            <ul class="menu-list">
+              <div class="burger_icon">
+                <a href="#"><img src="../files/images/icon/material-symbols_mail-outline-rounded.png" alt="Ошибка!"></a>
+                <a href="#"><img src="../files/images/icon/material-symbols_favorite-outline-rounded.png" alt="Ошибка!"></a>
+                <a href="#"><img src="../files/images/icon/material-symbols_notifications-outline-rounded.png" alt="Ошибка!"></a>
+              </div>
+              <li><a href="#" class="menu-item">Профиль</a></li>
+              <li><a href="#" class="menu-item">Отклики</a></li>
+              <li><a href="#" class="menu-item">Вакансии</a></li>
+              <li><a href="#" class="menu-item">Поддержка</a></li>
+            </ul>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 py-12">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Инфо профиля -->
+            <div class="lg:col-span-1 space-y-6">
+                <div class="card p-8 text-center relative">
+                    <div class="relative inline-block group mb-4">
+                        <div class="w-32 h-32 rounded-full border-4 border-[#2196F3] overflow-hidden bg-[#262626] mx-auto shadow-xl">
+                            <img id="profile-img-display" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User" class="w-full h-full object-cover">
+                        </div>
+                        <input type="file" id="photo-upload" class="hidden" accept="image/*" onchange="handlePhotoUpload(event)">
+                        <button onclick="document.getElementById('photo-upload').click()" class="absolute bottom-1 right-1 bg-[#2196F3] p-2 rounded-full border-4 border-[#1a1a1a] hover:scale-110 transition-transform">
+                            <i data-lucide="camera" class="w-4 h-4 text-white"></i>
+                        </button>
+                    </div>
+                    <h2 id="display-name" class="text-2xl font-bold mb-1">Иванов Иван</h2>
+                    <p id="display-location" class="text-gray-500 text-sm mb-6 flex justify-center items-center gap-1 italic">
+                        <i data-lucide="map-pin" class="w-3 h-3 text-[#2196F3]"></i> Москва, РФ
+                    </p>
+                    
+                    <div class="flex items-center justify-between p-4 bg-[#262626] rounded-2xl mb-6">
+                        <div class="text-left">
+                            <p class="text-[10px] uppercase text-gray-500 font-bold">Статус поиска</p>
+                            <span id="status-label" class="status-badge status-active">В поиске</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="status-toggle" checked onchange="toggleStatus()">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <button onclick="openEditProfile()" class="w-full btn-outline flex items-center justify-center gap-2">
+                        <i data-lucide="edit-3" class="w-4 h-4"></i> Редактировать профиль
+                    </button>
+                </div>
+
+                <div class="card p-6 space-y-4">
+                    <h3 class="font-bold text-gray-400 text-xs uppercase tracking-widest">Контакты</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-[#262626] rounded-lg"><i data-lucide="phone" class="w-4 h-4 text-[#2196F3]"></i></div>
+                            <div>
+                                <p class="text-[10px] text-gray-500">Телефон</p>
+                                <p id="display-phone" class="text-sm">+7 (900) 123-45-67</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-[#262626] rounded-lg"><i data-lucide="at-sign" class="w-4 h-4 text-[#2196F3]"></i></div>
+                            <div>
+                                <p class="text-[10px] text-gray-500">Почта</p>
+                                <p id="display-email" class="text-sm">ivanov@mail.ru</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Резюме -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-3xl font-bold">Мои резюме</h2>
+                    <button onclick="openResumeModal()" class="btn-primary flex items-center gap-2">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Создать
+                    </button>
+                </div>
+
+                <div id="resumes-container" class="space-y-4">
+                    <!-- JS Rendering -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Модалка редактирования профиля -->
+    <div id="profile-modal" class="hidden fixed inset-0 z-[2000] modal-overlay flex items-center justify-center p-4">
+        <div class="card w-full max-w-lg p-8 space-y-4 overflow-y-auto max-h-[90vh] relative">
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="text-2xl font-bold">Личные данные</h3>
+                <button onclick="closeEditProfile()" class="text-gray-500 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="text-[10px] text-gray-500 font-bold uppercase">ФИО</label>
+                    <input type="text" id="edit-name" class="input-field">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] text-gray-500 font-bold uppercase">Пол</label>
+                    <select id="edit-gender" class="input-field">
+                        <option value="Мужской">Мужской</option>
+                        <option value="Женский">Женский</option>
+                    </select>
+                </div>
+                
+                <div class="md:col-span-2 space-y-1 relative">
+                    <label class="text-[10px] text-gray-500 font-bold uppercase">Место нахождения (Поиск или Карта)</label>
+                    <div class="relative">
+                        <input type="text" id="location-search" class="input-field" placeholder="Начните вводить адрес..." oninput="searchAddress(this.value)">
+                        <div id="location-results" class="search-results hidden"></div>
+                    </div>
+                    <div id="edit-map" class="mt-2"></div>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-[10px] text-gray-500 font-bold uppercase">Телефон</label>
+                    <input type="text" id="edit-phone" class="input-field">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] text-gray-500 font-bold uppercase">Почта</label>
+                    <input type="email" id="edit-email" class="input-field">
+                </div>
+            </div>
+            
+            <div class="flex gap-4 pt-4">
+                <button onclick="closeEditProfile()" class="flex-1 btn-outline">Отмена</button>
+                <button onclick="saveProfile()" class="flex-1 btn-primary">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка резюме -->
+    <div id="resume-modal" class="hidden fixed inset-0 z-[2000] modal-overlay flex items-center justify-center p-4">
+        <div class="card w-full max-w-2xl p-8 space-y-6">
+            <h3 class="text-2xl font-bold">Новое резюме</h3>
+            <div class="space-y-4">
+                <div class="space-y-1">
+                    <label class="text-[10px] text-gray-500 font-bold uppercase">Профессия</label>
+                    <input type="text" id="res-prof" placeholder="Напр: Агроном-селекционер" class="input-field">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-[10px] text-gray-500 font-bold uppercase">Опыт работы</label>
+                        <input type="text" id="res-exp" placeholder="Напр: 3 года" class="input-field">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] text-gray-500 font-bold uppercase">Образование</label>
+                        <select id="res-edu" class="input-field">
+                            <option value="Среднее">Среднее</option>
+                            <option value="Среднее специальное">Среднее специальное</option>
+                            <option value="Высшее">Высшее</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] text-gray-500 font-bold uppercase">О себе</label>
+                    <textarea id="res-about" rows="4" placeholder="Напишите о ваших навыках и желаемой зарплате..." class="input-field resize-none"></textarea>
+                </div>
+            </div>
+            <div class="flex gap-4 pt-4">
+                <button onclick="closeResumeModal()" class="flex-1 btn-outline">Отмена</button>
+                <button onclick="saveResume()" class="flex-1 btn-primary">Опубликовать</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <a href="#"><img src="../files/images/logo/ЭТС 1_2 (FFCC00).png" width="200px" alt="Ошибка!"></a>
+        <p>© 2026 "ЭТС" Все права защищены.</p>
+        <div>
+            <a href="#">Профиль</a>
+            <a href="#">Отклики</a>
+            <a href="#">Вакансии</a>
+            <a href="#">Поддержка</a>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let userData = {
+            name: "Иванов Иван",
+            location: "Москва, РФ",
+            phone: "+7 (900) 123-45-67",
+            email: "ivanov@mail.ru",
+            gender: "Мужской",
+            isSearching: true,
+            photo: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"
+        };
+
+        let resumes = [{ id: 1, profession: "Оператор агродрона", experience: "2 года", education: "Среднее специальное", about: "Умею управлять дронами DJI." }];
+        let map, marker, searchTimeout;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            updateUI();
+            renderResumes();
+        });
+
+        function updateUI() {
+            document.getElementById('display-name').textContent = userData.name;
+            document.getElementById('display-location').innerHTML = `<i data-lucide="map-pin" class="w-3 h-3 inline"></i> ${userData.location}`;
+            document.getElementById('display-phone').textContent = userData.phone;
+            document.getElementById('display-email').textContent = userData.email;
+            document.getElementById('profile-img-display').src = userData.photo;
+            
+            // Обновляем город в навигации, если элемент существует
+            const navCity = document.getElementById('nav-city');
+            if (navCity) navCity.textContent = userData.location.split(',')[0];
+            
+            const badge = document.getElementById('status-label');
+            const toggle = document.getElementById('status-toggle');
+            
+            if (userData.isSearching) {
+                badge.textContent = "В поиске";
+                badge.className = "status-badge status-active";
+                toggle.checked = true;
+            } else {
+                badge.textContent = "Не ищу работу";
+                badge.className = "status-badge status-inactive";
+                toggle.checked = false;
+            }
+            lucide.createIcons();
+        }
+
+        function toggleStatus() {
+            userData.isSearching = document.getElementById('status-toggle').checked;
+            updateUI();
+        }
+
+        function handlePhotoUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => { userData.photo = e.target.result; updateUI(); };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        async function searchAddress(query) {
+            const resultsBox = document.getElementById('location-results');
+            if (query.length < 3) { resultsBox.classList.add('hidden'); return; }
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(async () => {
+                try {
+                    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`);
+                    const data = await res.json();
+                    if (data.length > 0) {
+                        resultsBox.innerHTML = data.map(item => `<div class="search-item" onclick="selectAddress('${item.display_name}', ${item.lat}, ${item.lon})">${item.display_name}</div>`).join('');
+                        resultsBox.classList.remove('hidden');
+                    } else { resultsBox.classList.add('hidden'); }
+                } catch (e) { console.error(e); }
+            }, 500);
+        }
+
+        function selectAddress(displayName, lat, lon) {
+            document.getElementById('location-search').value = displayName;
+            document.getElementById('location-results').classList.add('hidden');
+            const latlng = [lat, lon];
+            map.setView(latlng, 12);
+            if (marker) marker.setLatLng(latlng); else marker = L.marker(latlng).addTo(map);
+        }
+
+        function openEditProfile() {
+            document.getElementById('edit-name').value = userData.name;
+            document.getElementById('location-search').value = userData.location;
+            document.getElementById('edit-phone').value = userData.phone;
+            document.getElementById('edit-email').value = userData.email;
+            document.getElementById('edit-gender').value = userData.gender;
+            document.getElementById('profile-modal').classList.remove('hidden');
+            setTimeout(() => {
+                if (!map) {
+                    map = L.map('edit-map').setView([55.75, 37.61], 10);
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OSM' }).addTo(map);
+                    map.on('click', async (e) => {
+                        const { lat, lng } = e.latlng;
+                        if (marker) marker.setLatLng(e.latlng); else marker = L.marker(e.latlng).addTo(map);
+                        try {
+                            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+                            const data = await res.json();
+                            document.getElementById('location-search').value = data.display_name || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                        } catch (err) { document.getElementById('location-search').value = `${lat.toFixed(4)}, ${lng.toFixed(4)}`; }
+                    });
+                }
+                map.invalidateSize();
+            }, 300);
+        }
+
+        function closeEditProfile() { document.getElementById('profile-modal').classList.add('hidden'); }
+        function saveProfile() {
+            userData.name = document.getElementById('edit-name').value;
+            userData.location = document.getElementById('location-search').value;
+            userData.phone = document.getElementById('edit-phone').value;
+            userData.email = document.getElementById('edit-email').value;
+            userData.gender = document.getElementById('edit-gender').value;
+            updateUI(); closeEditProfile();
+        }
+
+        function renderResumes() {
+            const container = document.getElementById('resumes-container');
+            container.innerHTML = resumes.map(res => `
+                <div class="card p-8 group hover:border-[#2196F3] transition-all">
+                    <div class="flex justify-between items-start mb-6">
+                        <div><h3 class="text-xl font-bold mb-2 group-hover:text-[#2196F3]">${res.profession}</h3>
+                        <div class="flex gap-4 text-[10px] font-bold uppercase text-gray-400"><span>Опыт: ${res.experience}</span><span>${res.education}</span></div></div>
+                        <button onclick="deleteResume(${res.id})" class="p-2 text-gray-600 hover:text-red-500"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                    </div>
+                    <div class="bg-[#0f0f0f] p-5 rounded-2xl border border-[#333]"><p class="text-sm text-gray-400 italic">"${res.about}"</p></div>
+                </div>`).join('');
+            lucide.createIcons();
+        }
+
+        function openResumeModal() { document.getElementById('resume-modal').classList.remove('hidden'); }
+        function closeResumeModal() { document.getElementById('resume-modal').classList.add('hidden'); }
+        function saveResume() {
+            resumes.unshift({ id: Date.now(), profession: document.getElementById('res-prof').value, experience: document.getElementById('res-exp').value, education: document.getElementById('res-edu').value, about: document.getElementById('res-about').value });
+            renderResumes(); closeResumeModal();
+        }
+        function deleteResume(id) { resumes = resumes.filter(r => r.id !== id); renderResumes(); }
+    </script>
+</body>
+</html>

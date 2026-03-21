@@ -1,0 +1,92 @@
+.create{
+    width: 600px;
+    margin: 0 auto;
+    color: white;
+}
+.mainH1{
+    font-size: 48px;
+    text-align: center;
+    margin: 50px;
+}
+.cell{
+    margin-top: 30px;
+    margin-bottom: 50px;
+    border-radius: 15px;
+    background-color: #313131;
+    padding: 25px;
+    padding-top: 10px;
+}
+.separator{
+	width: 100%;
+	height: 2px;
+	border-radius: 1px;
+	background-color: #353535;
+	margin: 0 auto;
+	margin-bottom: 20px;
+	margin-top: 5px;
+}
+.professions{
+    display: grid;
+}
+label{
+    font-size: 18px;
+    margin-top: 15px;
+    margin-bottom: 5px;
+    margin-left: 10px;
+}
+.basic_input{
+    height: 45px;
+    width: 100%;
+    border-radius: 15px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+input{
+    font-size: 16px;
+}
+input:focus{
+    outline: none;
+}
+.fio{
+    display: grid;
+}
+.create p{
+    font-size: 18px;
+    margin-top: 15px;
+    margin-bottom: 5px;
+    margin-left: 10px;
+}
+.gender{
+    display: flex;
+    justify-content: space-between;
+}
+.btn_gender{
+    width: 48%;
+    height: 45px;
+    border-radius: 15px;
+    font-size: 18px;
+}
+.contact_info{
+    display: grid;
+}
+.btn_edit{
+	background-color: #0099FF;
+    color: white;
+    width: 220px;
+    height: 50px;
+    font-size: 20px;
+    border-radius: 15px;
+    border: none;
+    margin-right: 10px;
+}
+.skills{
+    width: 100%;
+    height: 150px;
+    resize: none; /* Запрет изменения размера */  
+    padding: 10px;
+    border-radius: 15px;
+    font-size: 16px;
+}
+textarea:focus{
+    outline: none;
+}
