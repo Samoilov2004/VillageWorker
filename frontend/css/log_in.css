@@ -1,0 +1,79 @@
+
+.Block1{
+    display: flex;
+    justify-content: center; /* По горизонтали */
+    align-items: center;     /* По вертикали */
+    height: 89.5vh;
+    background: linear-gradient( rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5) ), url('../files/images/ready/trava_gazon_makro_198825_2560x1600.jpg');
+    z-index: 10;
+}
+.Block2{
+    margin-top: -50px;
+    display: block;
+    text-align: center;
+    z-index: 10;
+}
+h3{
+    margin-bottom: 50px;
+    color: white;
+    text-align: center;
+    z-index: 10;
+}
+.input{
+    text-align: left;
+    z-index: 10;
+}
+input{
+    height: 38px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    z-index: 10;
+    border: none;
+    padding-left: 10px;
+    padding-right: 10px;
+    font-size: 16px;
+}
+input:focus{
+    outline: none;
+}
+p{
+    font-size: 14px;
+    color: white;
+    margin: 5px;
+    z-index: 10;
+}
+.input a{
+    font-size: 14px;
+    z-index: 10;
+    text-decoration: none;
+    color: #0099FF;
+}
+.register{
+    margin-top: 40px;
+    background-color: #0099FF;
+    color: white;
+    font-size: 20px;
+    border-radius: 10px;
+    border: none;
+    z-index: 10;
+    padding: 10px;
+    width: 100%;
+}
+.email input{
+    width: 360px;;
+}
+.pass{
+    display: flex;
+}
+
+.pass button{
+    width: 135px;
+    height: 39px;
+    background-color: #0099FF;
+    color: white;
+    font-size: 20px;
+    border-radius: 10px;
+    border: none;
+    z-index: 10;
+    margin-left: 10px;
+}

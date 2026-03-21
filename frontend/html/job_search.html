@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="../files/images/logo/ЭТС 2 (FFCC00).png">
+    <title>ЭТС / Поиск вакансий</title>
+    
+    <!-- Tailwind CSS для внутренних элементов контента -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Leaflet для карты -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+    <link rel="stylesheet" href="../css/media.css">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* Дополнительные стили для интеграции */
+        body {
+            color: white;
+            font-family: 'Comfortaa', Arial, sans-serif;
+            font-weight: 400;
+            margin: 0;
+            padding: 0;
+            background-color: #1D1D1D;
+        }
+        
+        /* Цвета из примера (Синий акцент) */
+        :root {
+            --accent-blue: #2196F3;
+            --accent-blue-hover: #1976D2;
+        }
+
+        /* Стили для выпадающего списка фильтров */
+        .filter-panel {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            z-index: 5;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #121212; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--accent-blue); border-radius: 10px; }
+
+        /* Кастомный Range Slider */
+        input[type=range]::-webkit-slider-thumb { 
+            border: 2px solid var(--accent-blue); 
+            background: #ffffff; 
+            cursor: pointer; 
+            -webkit-appearance: none; 
+            margin-top: -6px; 
+            height: 16px; 
+            width: 16px; 
+            border-radius: 50%; 
+        }
+
+        /* Кастомные чекбоксы как на скриншоте */
+        .custom-checkbox {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #444;
+            border-radius: 6px;
+            background: transparent;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+        }
+        .custom-checkbox:checked {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+        }
+        .custom-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            color: white;
+            font-size: 14px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .hidden-important { display: none !important; }
+
+        /* Фикс для Leaflet */
+        .leaflet-top, .leaflet-bottom {
+            z-index: 4 !important;
+        }
+
+        .burger_icon{
+            display: flex;
+            text-align: center;
+            margin: 0 auto;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Шапка -->
+    <header>
+        <div class="menu">
+            <a class="logo" href="#"><img src="../files/images/logo/ЭТС 1_2 (FFCC00).png" width="200px" alt="Ошибка!"></a>
+            <div>
+                <a href="#">Профиль</a>
+                <a href="#">Отклики</a>
+                <a href="#">Вакансии</a>
+                <a href="#">Поддержка</a>
+            </div>
+        </div>
+        <div class="add_menu">
+            <div>
+              <img src="../files/images/icon/material-symbols_navigation-outline-rounded.png">
+              <a class="city" href="#">Москва</a>
+            </div>
+            <a href="#"><img src="../files/images/icon/material-symbols_mail-outline-rounded.png" alt="Ошибка!"></a>
+            <a href="#"><img src="../files/images/icon/material-symbols_favorite-outline-rounded.png" alt="Ошибка!"></a>
+            <a href="#"><img src="../files/images/icon/material-symbols_notifications-outline-rounded.png" alt="Ошибка!"></a>
+            <button class="create_resume">Создать резюме</button>
+        </div>
+        <div class="gorod">
+          <img src="../files/images/icon/material-symbols_navigation-outline-rounded.png">
+          <a class="city" href="#">Москва</a>
+        </div>
+        <input type="checkbox" id="burger-checkbox" class="burger-checkbox">
+            <label class="burger" for="burger-checkbox"></label>
+            <ul class="menu-list">
+              <div class="burger_icon">
+                <a href="#"><img src="../files/images/icon/material-symbols_mail-outline-rounded.png" alt="Ошибка!"></a>
+                <a href="#"><img src="../files/images/icon/material-symbols_favorite-outline-rounded.png" alt="Ошибка!"></a>
+                <a href="#"><img src="../files/images/icon/material-symbols_notifications-outline-rounded.png" alt="Ошибка!"></a>
+              </div>
+              <li><a href="#" class="menu-item">Профиль</a></li>
+              <li><a href="#" class="menu-item">Отклики</a></li>
+              <li><a href="#" class="menu-item">Вакансии</a></li>
+              <li><a href="#" class="menu-item">Поддержка</a></li>
+            </ul>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-12">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-4xl font-bold">Поиск работы</h1>
+            
+            <div class="flex bg-[#1a1a1a] p-1 rounded-xl border border-gray-800">
+                <button id="btn-list" onclick="setViewMode('list')" class="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold bg-[#2196F3] text-white shadow-lg transition-all">
+                    <i data-lucide="layout-list" class="w-4 h-4"></i>
+                    <span>Списком</span>
+                </button>
+                <button id="btn-map" onclick="setViewMode('map')" class="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold text-gray-500 hover:text-gray-300 transition-all">
+                    <i data-lucide="map" class="w-4 h-4"></i>
+                    <span>На карте</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Поисковая строка и фильтры -->
+        <div class="flex flex-col md:flex-row gap-4 mb-10 relative" id="filter-container" style="z-index: 6;">
+            <div class="relative flex-1">
+                <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5"></i>
+                <input 
+                    type="text" 
+                    placeholder="Должность или специализация"
+                    class="w-full bg-[#1a1a1a] border border-gray-800 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:border-[#2196F3] transition-all text-white"
+                />
+            </div>
+
+            <button id="btn-filter-toggle" class="flex items-center justify-center gap-2 px-6 py-4 rounded-2xl border border-gray-800 bg-[#1a1a1a] text-gray-300 hover:border-gray-600 transition-all font-bold">
+                <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>
+                <span>Фильтры</span>
+            </button>
+
+            <button class="bg-[#2196F3] text-white px-12 py-4 rounded-2xl font-bold shadow-xl hover:bg-[#1976D2] transition-all">
+                Найти
+            </button>
+
+            <!-- Выпадающая панель фильтров -->
+            <div id="filter-panel" class="hidden absolute top-full right-0 mt-4 w-full md:w-[500px] filter-panel rounded-3xl p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold">Параметры</h3>
+                    <button id="btn-close-filter" class="text-gray-500 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+                </div>
+                
+                <div class="space-y-8 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+                    <!-- Радиус -->
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-gray-500 uppercase">Радиус поиска</span>
+                            <span class="text-[#2196F3] font-bold" id="radius-val">15 км</span>
+                        </div>
+                        <input type="range" min="1" max="100" value="15" id="radius-input" class="w-full h-1 bg-gray-800 rounded-lg appearance-none accent-[#2196F3]">
+                    </div>
+
+                    <div id="filters-content" class="grid grid-cols-1 gap-8">
+                        <!-- Контент фильтров -->
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-gray-800 flex justify-between items-center">
+                    <button class="text-gray-500 hover:text-white text-sm font-bold">Сбросить</button>
+                    <button id="btn-apply-filter" class="bg-[#2196F3] text-white px-8 py-3 rounded-xl text-sm font-bold">Применить</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Контент -->
+        <div id="view-list" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Список вакансий -->
+        </div>
+
+        <div id="view-map" class="h-[600px] rounded-3xl overflow-hidden border border-gray-800 hidden-important">
+            <div id="map" class="w-full h-full z-0"></div>
+        </div>
+    </main>
+
+    <!-- Подвал -->
+    <footer>
+        <a href="#"><img src="../files/images/logo/ЭТС 1_2 (FFCC00).png" width="200px" alt="Ошибка!"></a>
+        <p>© 2026 "ЭТС" Все права защищены.</p>
+        <div>
+            <a href="#">Профиль</a>
+            <a href="#">Отклики</a>
+            <a href="#">Вакансии</a>
+            <a href="#">Поддержка</a>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script>
+        const jobs = [
+            { id: 1, title: "Оператор агродрона", salary: "120.000 - 150.000 ₽", company: "АгроТех", location: "Москва", coords: [55.7558, 37.6173], badge: "Новое" },
+            { id: 2, title: "Механик сельхозтехники", salary: "90.000 - 130.000 ₽", company: "СибПашня", location: "Москва", coords: [55.7658, 37.6273], badge: "Срочно" },
+            { id: 3, title: "Инженер-электронщик", salary: "110.000 - 160.000 ₽", company: "ЭкоСистема", location: "Зеленоград", coords: [55.9911, 37.2144], badge: "Удаленно" }
+        ];
+
+        const filterData = [
+            { title: "Образование", items: ["Среднее", "Среднее специальное", "Высшее"] },
+            { title: "Опыт работы", items: ["Без опыта", "1-3 года", "3-6 лет", "Более 6 лет"] },
+            { title: "Оборудование", items: ["Своя техника", "Предоставляется компанией"] }
+        ];
+
+        let mapInstance = null;
+        let radiusCircle = null;
+        let currentRadius = 15;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderJobs();
+            renderFilters();
+            lucide.createIcons();
+
+            const toggle = document.getElementById('btn-filter-toggle');
+            const panel = document.getElementById('filter-panel');
+            const close = document.getElementById('btn-close-filter');
+            const apply = document.getElementById('btn-apply-filter');
+
+            toggle.onclick = (e) => { e.stopPropagation(); panel.classList.toggle('hidden'); };
+            close.onclick = () => panel.classList.add('hidden');
+            apply.onclick = () => panel.classList.add('hidden');
+            
+            document.onclick = (e) => {
+                if (!panel.contains(e.target) && e.target !== toggle) panel.classList.add('hidden');
+            };
+
+            const rInput = document.getElementById('radius-input');
+            const rVal = document.getElementById('radius-val');
+            
+            rInput.oninput = (e) => {
+                const val = e.target.value;
+                rVal.textContent = val + ' км';
+                currentRadius = parseInt(val);
+                updateRadiusOnMap();
+            };
+        });
+
+        function updateRadiusOnMap() {
+            if (mapInstance && radiusCircle) {
+                radiusCircle.setRadius(currentRadius * 1000);
+            }
+        }
+
+        function renderJobs() {
+            const container = document.getElementById('view-list');
+            container.innerHTML = jobs.map(job => `
+                <div class="bg-[#1a1a1a] border border-gray-800 rounded-3xl p-8 hover:border-[#2196F3]/50 transition-all group">
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="text-[#2196F3] text-[10px] font-bold uppercase tracking-widest px-3 py-1 bg-[#2196F3]/10 rounded-full border border-[#2196F3]/20">${job.badge}</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2 group-hover:text-[#2196F3] transition-colors">${job.title}</h3>
+                    <div class="text-2xl font-black text-white mb-6">${job.salary}</div>
+                    <div class="flex items-center space-x-4 text-sm text-gray-400 mb-8 pb-6 border-b border-gray-800">
+                        <span>${job.company}</span>
+                        <span>•</span>
+                        <span>${job.location}</span>
+                    </div>
+                    <button class="w-full bg-[#2196F3] text-white font-bold py-3 rounded-xl hover:bg-[#1976D2] transition-colors">Подробнее</button>
+                </div>
+            `).join('');
+        }
+
+        function renderFilters() {
+            const container = document.getElementById('filters-content');
+            container.innerHTML = filterData.map(cat => `
+                <div class="space-y-4">
+                    <h4 class="text-xs font-bold text-[#2196F3] uppercase tracking-widest">${cat.title}</h4>
+                    <div class="grid grid-cols-1 gap-3">
+                        ${cat.items.map(item => `
+                            <label class="flex items-center space-x-3 cursor-pointer group">
+                                <input type="checkbox" class="custom-checkbox">
+                                <span class="text-gray-400 group-hover:text-white transition-colors text-sm font-medium">${item}</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function setViewMode(mode) {
+            const list = document.getElementById('view-list');
+            const map = document.getElementById('view-map');
+            const btnL = document.getElementById('btn-list');
+            const btnM = document.getElementById('btn-map');
+
+            if (mode === 'list') {
+                list.classList.remove('hidden-important');
+                map.classList.add('hidden-important');
+                btnL.className = "flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold bg-[#2196F3] text-white shadow-lg";
+                btnM.className = "flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold text-gray-500 hover:text-gray-300";
+            } else {
+                list.classList.add('hidden-important');
+                map.classList.remove('hidden-important');
+                btnM.className = "flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold bg-[#2196F3] text-white shadow-lg";
+                btnL.className = "flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold text-gray-500 hover:text-gray-300";
+                
+                if (!mapInstance) {
+                    mapInstance = L.map('map').setView([55.7558, 37.6173], 10);
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(mapInstance);
+                    
+                    radiusCircle = L.circle([55.7558, 37.6173], {
+                        color: '#2196F3',
+                        fillColor: '#2196F3',
+                        fillOpacity: 0.1,
+                        radius: currentRadius * 1000
+                    }).addTo(mapInstance);
+
+                    jobs.forEach(j => L.marker(j.coords).addTo(mapInstance).bindPopup(`<b>${j.title}</b><br>${j.salary}`));
+                }
+                setTimeout(() => {
+                    mapInstance.invalidateSize();
+                    updateRadiusOnMap();
+                }, 200);
+            }
+        }
+    </script>
+</body>
+</html>

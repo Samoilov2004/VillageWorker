@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="../files/images/logo/ЭТС 2 (FFCC00).png">
+    <title>ЭТС / Регистрация</title>
+    <link rel="stylesheet" href="../css/media.css">
+    <link rel="stylesheet" href="../css/create.css">
+</head>
+<body>
+    <header>
+        <div class="menu">
+            <a class="logo" href="#"><img src="../files/images/logo/ЭТС 1_2 (FFCC00).png" width="200px" alt="Ошибка!"></a>
+            <div>
+                <a href="#">Профиль</a>
+                <a href="#">Отклики</a>
+                <a href="#">Вакансии</a>
+                <a href="#">Поддержка</a>
+            </div>
+        </div>
+        <div class="add_menu">
+            <div>
+                <img src="../files/images/icon/material-symbols_navigation-outline-rounded.png">
+                <a class="city" href="#">Москва</a>
+            </div>
+            <button class="b_log_in">Войти</button>
+            <button class="b_create">Зарегистрироваться</button>   
+        </div>
+        <div class="gorod">
+            <img src="../files/images/icon/material-symbols_navigation-outline-rounded.png">
+            <a class="city" href="#">Москва</a>
+        </div>
+        <input type="checkbox" id="burger-checkbox" class="burger-checkbox">
+        <label class="burger" for="burger-checkbox"></label>
+            <ul class="menu-list">
+                <li><button class="b_log_in">Войти</button>
+                <button class="b_create">Зарегистрироваться</button></li>
+                <li><a href="#" class="menu-item">Профиль</a></li>
+                <li><a href="#" class="menu-item">Отклики</a></li>
+                <li><a href="#" class="menu-item">Вакансии</a></li>
+                <li><a href="#" class="menu-item">Поддержка</a></li>
+            </ul>
+    </header>
+    <div class="up_blackout"></div>
+    <div class="Block1">
+        <div class="Block2">
+            <h3>Регистрация</h3>
+            <form>
+            <div class="input">
+                <div class="email">
+                    <p>Email</p>
+                    <input
+                    id="emailAddress"
+                    type="email"
+                    size="64"
+                    maxlength="64"
+                    required
+                    placeholder="username@gmail.com"
+                    pattern=".+@gmail\.com"
+                    title="***@gmail.com" />
+                </div>
+                <p>Password</p>
+                <div class="pass">
+                    <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    minlength="8"
+                    maxlength="128"
+                    required
+                    pattern="(?=.*[0-9])(?=.*[a-zA-Z]).{8,}"
+                    placeholder="Придумайте пароль"
+                    title="Пароль должен быть не короче 8 символов и содержать хотя бы одну букву и одну цифру" />
+                    <button type="button" id="toggle-password">Показать</button>
+                </div>
+                <p>Есть аккаунт? <a href="log_in.html">Войти</a></p>
+            </div>
+            <button class="register" type="submit">Зарегистрироваться</button>
+            </form>
+        </div>
+    </div>
+    <div class="down_blackout"></div>
+
+    <script>
+// Находим элементы в DOM
+const passwordInput = document.getElementById('password')
+const toggleButton = document.getElementById('toggle-password')
+
+// Вешаем обработчик клика
+toggleButton.addEventListener('click', () => {
+  // Проверяем текущий тип поля
+  const isPassword = passwordInput.type === 'password'
+
+  // Переключаем тип между password и text
+  passwordInput.type = isPassword ? 'text' : 'password'
+
+  // Обновляем текст кнопки для наглядности
+  toggleButton.textContent = isPassword ? 'Скрыть' : 'Показать'
+})
+</script>
+
+</body>
+</html>

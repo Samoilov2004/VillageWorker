@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="../files/images/logo/ЭТС 2 (FFCC00).png">
+    <title>ЭТС / Создание резюме</title>
+    <link rel="stylesheet" href="../css/media.css">
+    <link rel="stylesheet" href="../css/create_resume.css">
+</head>
+<body>
+    <header>
+        <div class="menu">
+            <a class="logo" href="#"><img src="../files/images/logo/ЭТС 1_2 (FFCC00).png" width="200px" alt="Ошибка!"></a>
+            <div>
+                <a href="#">Профиль</a>
+                <a href="#">Отклики</a>
+                <a href="#">Вакансии</a>
+                <a href="#">Поддержка</a>
+            </div>
+        </div>
+        <div class="add_menu">
+            <div>
+              <img src="../files/images/icon/material-symbols_navigation-outline-rounded.png">
+              <a class="city" href="#">Москва</a>
+            </div>
+            <a href="#"><img src="../files/images/icon/material-symbols_mail-outline-rounded.png" alt="Ошибка!"></a>
+            <a href="#"><img src="../files/images/icon/material-symbols_favorite-outline-rounded.png" alt="Ошибка!"></a>
+            <a href="#"><img src="../files/images/icon/material-symbols_notifications-outline-rounded.png" alt="Ошибка!"></a>
+            <button class="create_resume">Создать резюме</button>
+        </div>
+        <div class="gorod">
+          <img src="../files/images/icon/material-symbols_navigation-outline-rounded.png">
+          <a class="city" href="#">Москва</a>
+        </div>
+        <input type="checkbox" id="burger-checkbox" class="burger-checkbox">
+            <label class="burger" for="burger-checkbox"></label>
+            <ul class="menu-list">
+              <div>
+                <a href="#"><img src="../files/images/icon/material-symbols_mail-outline-rounded.png" alt="Ошибка!"></a>
+                <a href="#"><img src="../files/images/icon/material-symbols_favorite-outline-rounded.png" alt="Ошибка!"></a>
+                <a href="#"><img src="../files/images/icon/material-symbols_notifications-outline-rounded.png" alt="Ошибка!"></a>
+              </div>
+              <li><a href="#" class="menu-item">СОЗДАТЬ РЕЗЮМЕ</a></li>
+              <li><a href="#" class="menu-item">Профиль</a></li>
+              <li><a href="#" class="menu-item">Отклики</a></li>
+              <li><a href="#" class="menu-item">Вакансии</a></li>
+              <li><a href="#" class="menu-item">Поддержка</a></li>
+            </ul>
+    </header>
+
+    <div class="create">
+        <h1 class="mainH1">Создание резюме</h1>
+        <div class="cell">
+            <div class="professions">
+                <label for="professions">Профессия</label>
+                <input list="professions" class="basic_input" id="profession" name="profession" placeholder="Начните вводить профессию ...">
+                <datalist id="professions">
+                    <option value="Администратор">
+                    <option value="Менеджер">
+                    <option value="Программист">
+                </datalist>
+            </div>
+        </div>
+        <div class="separator"></div>
+        <div class="cell">
+            <div class="fio">
+                <p>Имя</p>
+                <input list="#" class="basic_input" id="profession_f" name="#" placeholder="Введите имя ...">
+                <p>Фамилия</p>
+                <input list="#" class="basic_input" id="profession_i" name="#" placeholder="Введите фамилию ...">
+                <p>Отчество</p>
+                <input list="#" class="basic_input" id="profession_o" name="#" placeholder="Введите отчество ...">
+            </div>
+        </div>
+        <div class="separator"></div>
+        <div class="cell">
+            <p>Пол</p>
+            <div class="gender">
+                <button class="btn_gender">Мужской</button>
+                <button class="btn_gender">Женский</button>
+            </div>
+        </div>
+        <div class="separator"></div>
+        <div class="cell">
+            <div class="contact_info">
+                <label for="city">Город</label>
+                <input list="cities" class="basic_input" id="city" name="city" placeholder="Начните вводить город ...">
+                <datalist id="cities">
+                    <option value="Москва">
+                    <option value="Санкт-Питербург">
+                    <option value="Пермь">
+                </datalist>
+                <p>Номер телефона</p>
+                <input list="#" class="basic_input" id="phone" name="#" placeholder="Введите номер телефона ...">
+            </div>
+        </div>
+        <div class="separator"></div>
+        <div class="cell">
+            <!--Выбор диплома-->
+        </div>
+        <div class="separator"></div>
+        <div class="cell">
+            <p>Навыки</p>
+            <textarea class="skills" name="comment">Обучаемый, мобильный...</textarea>
+        </div>
+        <div class="separator"></div>
+        <div class="cell">
+            <p>Опыт работы</p>
+
+        </div>
+        <div class="separator"></div>
+        <button class="btn_edit">Сохранить</button>
+    </div>
+
+    <footer>
+        <a href="#"><img src="../files/images/logo/ЭТС 1_2 (FFCC00).png" width="200px" alt="Ошибка!"></a>
+        <p>© 2026 "ЭТС" Все права защищены.</p>
+        <div>
+            <a href="#">Профиль</a>
+            <a href="#">Отклики</a>
+            <a href="#">Вакансии</a>
+            <a href="#">Поддержка</a>
+        </div>
+    </footer>
+
+    <script src=""></script>
+
+</body>
+</html>
