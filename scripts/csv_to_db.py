@@ -1,232 +1,360 @@
-import pandas as pd
-import sqlite3
-import time
 import os
+import csv
 import json
-from tqdm import tqdm
+import time
+import sqlite3
+from pathlib import Path
 
-def clean_column_names(df):
-    """Очистка имен колонок от лишних символов"""
-    df.columns = [col.strip().lstrip(',') for col in df.columns]
-    return df
+import pandas as pd
 
-def remove_first_column(df):
-    """Удаление первой колонки (индексы 0,1,2...)"""
-    if df.columns[0] == '' or df.columns[0].startswith(','):
-        df = df.drop(df.columns[0], axis=1)
-        print("✅ Удалена первая колонка с индексами")
-    return df
 
-def process_json_columns(df):
-    """Обработка JSON колонок для лучшего поиска"""
-    if 'salary' in df.columns:
-        try:
-            def extract_salary_min(x):
-                if pd.isna(x) or x == '':
-                    return None
-                try:
-                    data = json.loads(x.replace('""', '"'))
-                    return data.get('min')
-                except:
-                    return None
+REQUIRED_COLUMNS = [
+    "id",
+    "title",
+    "salary",
+    "experience",
+    "description",
+    "key_skills",
+    "company",
+    "type",
+    "address_info",
+    "meta",
+    "label",
+]
 
-            def extract_salary_max(x):
-                if pd.isna(x) or x == '':
-                    return None
-                try:
-                    data = json.loads(x.replace('""', '"'))
-                    return data.get('max')
-                except:
-                    return None
 
-            def extract_salary_currency(x):
-                if pd.isna(x) or x == '':
-                    return None
-                try:
-                    data = json.loads(x.replace('""', '"'))
-                    return data.get('currency')
-                except:
-                    return None
-
-            df['salary_min'] = df['salary'].apply(extract_salary_min)
-            df['salary_max'] = df['salary'].apply(extract_salary_max)
-            df['salary_currency'] = df['salary'].apply(extract_salary_currency)
-        except Exception as e:
-            print(f"⚠️  Не удалось обработать колонку salary: {e}")
-
-    if 'experience' in df.columns:
-        try:
-            def extract_exp_min(x):
-                if pd.isna(x) or x == '':
-                    return None
-                try:
-                    data = json.loads(x.replace('""', '"'))
-                    return data.get('min')
-                except:
-                    return None
-
-            def extract_exp_max(x):
-                if pd.isna(x) or x == '':
-                    return None
-                try:
-                    data = json.loads(x.replace('""', '"'))
-                    return data.get('max')
-                except:
-                    return None
-
-            df['experience_min'] = df['experience'].apply(extract_exp_min)
-            df['experience_max'] = df['experience'].apply(extract_exp_max)
-        except Exception as e:
-            print(f"⚠️  Не удалось обработать колонку experience: {e}")
-
-    if 'address_info' in df.columns:
-        try:
-            def extract_city(x):
-                if pd.isna(x) or x == '':
-                    return None
-                try:
-                    data = json.loads(x.replace('""', '"'))
-                    return data.get('city')
-                except:
-                    return None
-
-            def extract_state(x):
-                if pd.isna(x) or x == '':
-                    return None
-                try:
-                    data = json.loads(x.replace('""', '"'))
-                    return data.get('state')
-                except:
-                    return None
-
-            df['city'] = df['address_info'].apply(extract_city)
-            df['state'] = df['address_info'].apply(extract_state)
-        except Exception as e:
-            print(f"⚠️  Не удалось обработать колонку address_info: {e}")
-
-    return df
-
-def csv_to_sqlite(csv_path: str = "data/jobs.csv", db_path: str = "data/jobs.db"):
-    """Конвертировать CSV в SQLite базу данных"""
-
-    if not os.path.exists(csv_path):
-        print(f"❌ Файл {csv_path} не найден!")
-        print(f"Текущая директория: {os.getcwd()}")
-        return False
-
-    print(f"🚀 Начинаем конвертацию {csv_path} в SQLite...")
-    start_time = time.time()
+def detect_delimiter(file_path: str, sample_size: int = 65536) -> str:
+    """Автоопределение разделителя CSV."""
+    with open(file_path, "r", encoding="utf-8-sig", newline="") as f:
+        sample = f.read(sample_size)
 
     try:
-        data_dir = os.path.dirname(db_path)
-        if data_dir and not os.path.exists(data_dir):
-            os.makedirs(data_dir)
-            print(f"📁 Создана папка: {data_dir}")
+        dialect = csv.Sniffer().sniff(sample, delimiters=",;\t|")
+        return dialect.delimiter
+    except Exception:
+        return ","
 
-        print("📖 Читаем CSV файл...")
-        df = pd.read_csv(csv_path, sep='\t')
-        print(f"📊 Прочитано строк: {len(df)}")
-        print(f"📋 Исходные колонки: {list(df.columns)}")
 
-        df = clean_column_names(df)
-        df = remove_first_column(df)
+def clean_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Чистим имена колонок и убираем мусорные Unnamed."""
+    df.columns = [str(c).strip().lstrip(",") for c in df.columns]
+    df = df.loc[:, ~df.columns.str.contains(r"^Unnamed", regex=True)]
+    df = df.loc[:, df.columns != ""]
+    return df
 
-        print(f"📋 Колонки после очистки: {list(df.columns)}")
 
-        print("🔧 Обработка JSON колонок...")
-        df = process_json_columns(df)
+def empty_to_none(value):
+    if value is None:
+        return None
+    if pd.isna(value):
+        return None
+    value = str(value).strip()
+    return value if value != "" else None
 
-        conn = sqlite3.connect(db_path)
-        print(f"✅ Подключено к базе данных: {db_path}")
 
-        print("💾 Сохраняем в базу данных...")
-        df.to_sql('jobs', conn, if_exists='replace', index=False)
+def safe_int(value):
+    value = empty_to_none(value)
+    if value is None:
+        return None
+    try:
+        return int(float(value))
+    except Exception:
+        return None
 
-        print(".CreateIndexes...")
-        cursor = conn.cursor()
 
-        cursor.execute("PRAGMA table_info(jobs)")
-        existing_columns = [row[1] for row in cursor.fetchall()]
-        print(f"🔍 Найденные колонки в базе: {existing_columns}")
+def safe_float(value):
+    value = empty_to_none(value)
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except Exception:
+        return None
 
-        possible_indexes = [
-            ('id', 'idx_id'),
-            ('title', 'idx_title'),
-            ('description', 'idx_description'),
-            ('city', 'idx_city'),
-            ('company', 'idx_company'),
-            ('type', 'idx_type'),
-            ('salary_min', 'idx_salary_min')
-        ]
 
-        created_indexes = []
-        for column, index_name in possible_indexes:
-            if column in existing_columns:
-                try:
-                    cursor.execute(f"CREATE INDEX IF NOT EXISTS {index_name} ON jobs({column})")
-                    created_indexes.append(column)
-                    print(f"✅ Создан индекс для {column}")
-                except Exception as e:
-                    print(f"⚠️  Не удалось создать индекс для {column}: {e}")
-            else:
-                print(f"ℹ️  Колонка {column} отсутствует в данных")
+def parse_json_field(value, field_name: str, error_stats: dict):
+    """
+    Парсим JSON из CSV.
+    Возвращаем:
+      - нормализованный JSON-строку для хранения в SQLite
+      - dict с данными
+    """
+    value = empty_to_none(value)
+    if value is None:
+        return None, {}
 
+    try:
+        obj = json.loads(value)
+        normalized = json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
+        return normalized, obj
+    except Exception:
+        error_stats[field_name] = error_stats.get(field_name, 0) + 1
+        return None, {}
+
+
+def create_schema(conn: sqlite3.Connection):
+    conn.execute("DROP TABLE IF EXISTS jobs")
+
+    conn.execute("""
+    CREATE TABLE jobs (
+        id INTEGER PRIMARY KEY,
+        title TEXT,
+        salary TEXT CHECK (salary IS NULL OR json_valid(salary)),
+        experience TEXT CHECK (experience IS NULL OR json_valid(experience)),
+        description TEXT,
+        key_skills TEXT,
+        company TEXT,
+        type TEXT,
+        address_info TEXT CHECK (address_info IS NULL OR json_valid(address_info)),
+        meta TEXT CHECK (meta IS NULL OR json_valid(meta)),
+        label TEXT,
+
+        salary_min INTEGER,
+        salary_max INTEGER,
+        salary_currency TEXT,
+
+        experience_min INTEGER,
+        experience_max INTEGER,
+
+        country TEXT,
+        region TEXT,
+        state TEXT,
+        city TEXT,
+        latitude REAL,
+        longitude REAL,
+        geo_status TEXT,
+
+        publication_time INTEGER,
+        last_edit_time INTEGER,
+        total_views INTEGER,
+        views_last_week INTEGER
+    )
+    """)
+    conn.commit()
+
+
+def create_indexes(conn: sqlite3.Connection):
+    indexes = [
+        "CREATE INDEX IF NOT EXISTS idx_jobs_company ON jobs(company)",
+        "CREATE INDEX IF NOT EXISTS idx_jobs_type ON jobs(type)",
+        "CREATE INDEX IF NOT EXISTS idx_jobs_label ON jobs(label)",
+        "CREATE INDEX IF NOT EXISTS idx_jobs_city ON jobs(city)",
+        "CREATE INDEX IF NOT EXISTS idx_jobs_state ON jobs(state)",
+        "CREATE INDEX IF NOT EXISTS idx_jobs_region ON jobs(region)",
+        "CREATE INDEX IF NOT EXISTS idx_jobs_salary_min ON jobs(salary_min)",
+        "CREATE INDEX IF NOT EXISTS idx_jobs_salary_max ON jobs(salary_max)",
+        "CREATE INDEX IF NOT EXISTS idx_jobs_experience_min ON jobs(experience_min)",
+        "CREATE INDEX IF NOT EXISTS idx_jobs_publication_time ON jobs(publication_time)",
+        "CREATE INDEX IF NOT EXISTS idx_jobs_total_views ON jobs(total_views)",
+    ]
+
+    for sql in indexes:
+        conn.execute(sql)
+
+    conn.commit()
+
+
+def create_fts(conn: sqlite3.Connection):
+    """
+    Полнотекстовый поиск по title/description/company/key_skills/label.
+    Если FTS5 недоступен в сборке SQLite — просто пропустим.
+    """
+    try:
+        conn.execute("DROP TABLE IF EXISTS jobs_fts")
+        conn.execute("""
+        CREATE VIRTUAL TABLE jobs_fts USING fts5(
+            title,
+            description,
+            company,
+            key_skills,
+            label,
+            content='jobs',
+            content_rowid='id'
+        )
+        """)
+        conn.execute("""
+        INSERT INTO jobs_fts(rowid, title, description, company, key_skills, label)
+        SELECT id, title, description, company, key_skills, label
+        FROM jobs
+        """)
+        conn.commit()
+        print("✅ Создан FTS5 индекс для полнотекстового поиска")
+    except sqlite3.OperationalError as e:
+        print(f"⚠️ FTS5 недоступен: {e}")
+
+
+def prepare_row(row: dict, error_stats: dict):
+    salary_json, salary_obj = parse_json_field(row.get("salary"), "salary", error_stats)
+    exp_json, exp_obj = parse_json_field(row.get("experience"), "experience", error_stats)
+    addr_json, addr_obj = parse_json_field(row.get("address_info"), "address_info", error_stats)
+    meta_json, meta_obj = parse_json_field(row.get("meta"), "meta", error_stats)
+
+    return (
+        safe_int(row.get("id")),
+        empty_to_none(row.get("title")),
+        salary_json,
+        exp_json,
+        empty_to_none(row.get("description")),
+        empty_to_none(row.get("key_skills")),
+        empty_to_none(row.get("company")),
+        empty_to_none(row.get("type")),
+        addr_json,
+        meta_json,
+        empty_to_none(row.get("label")),
+
+        safe_int(salary_obj.get("min")),
+        safe_int(salary_obj.get("max")),
+        empty_to_none(salary_obj.get("currency")),
+
+        safe_int(exp_obj.get("min")),
+        safe_int(exp_obj.get("max")),
+
+        empty_to_none(addr_obj.get("country")),
+        empty_to_none(addr_obj.get("region")),
+        empty_to_none(addr_obj.get("state")),
+        empty_to_none(addr_obj.get("city")),
+        safe_float(addr_obj.get("latitude")),
+        safe_float(addr_obj.get("longitude")),
+        empty_to_none(addr_obj.get("status")),
+
+        safe_int(meta_obj.get("publication_time")),
+        safe_int(meta_obj.get("last_edit_time")),
+        safe_int(meta_obj.get("total_views")),
+        safe_int(meta_obj.get("views_last_week")),
+    )
+
+
+INSERT_SQL = """
+INSERT OR REPLACE INTO jobs (
+    id,
+    title,
+    salary,
+    experience,
+    description,
+    key_skills,
+    company,
+    type,
+    address_info,
+    meta,
+    label,
+
+    salary_min,
+    salary_max,
+    salary_currency,
+
+    experience_min,
+    experience_max,
+
+    country,
+    region,
+    state,
+    city,
+    latitude,
+    longitude,
+    geo_status,
+
+    publication_time,
+    last_edit_time,
+    total_views,
+    views_last_week
+) VALUES (
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+    ?, ?, ?,
+    ?, ?,
+    ?, ?, ?, ?, ?, ?, ?,
+    ?, ?, ?, ?
+)
+"""
+
+
+def csv_to_sqlite(
+    csv_path: str,
+    db_path: str,
+    chunksize: int = 5000,
+):
+    if not os.path.exists(csv_path):
+        print(f"❌ CSV не найден: {csv_path}")
+        return False
+
+    start = time.time()
+    delimiter = detect_delimiter(csv_path)
+    print(f"📄 CSV: {csv_path}")
+    print(f"🗂 DB:  {db_path}")
+    print(f"🔎 Определён разделитель: {repr(delimiter)}")
+
+    Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+
+    conn = sqlite3.connect(db_path)
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=NORMAL")
+    conn.execute("PRAGMA temp_store=MEMORY")
+    conn.execute("PRAGMA cache_size=-200000")
+
+    create_schema(conn)
+
+    total_inserted = 0
+    error_stats = {}
+
+    try:
+        reader = pd.read_csv(
+            csv_path,
+            sep=delimiter,
+            encoding="utf-8-sig",
+            dtype=str,
+            keep_default_na=False,
+            chunksize=chunksize,
+            low_memory=False,
+        )
+
+        for chunk_idx, chunk in enumerate(reader, start=1):
+            chunk = clean_columns(chunk)
+
+            missing = [col for col in REQUIRED_COLUMNS if col not in chunk.columns]
+            if missing:
+                raise ValueError(f"В CSV отсутствуют обязательные колонки: {missing}")
+
+            records = chunk.to_dict(orient="records")
+            batch = [prepare_row(row, error_stats) for row in records]
+
+            with conn:
+                conn.executemany(INSERT_SQL, batch)
+
+            total_inserted += len(batch)
+            print(f"✅ Chunk {chunk_idx}: загружено {len(batch)} строк (всего {total_inserted})")
+
+        create_indexes(conn)
+        create_fts(conn)
+
+        conn.execute("ANALYZE")
         conn.commit()
         conn.close()
 
-        end_time = time.time()
+        elapsed = time.time() - start
+        db_size_mb = os.path.getsize(db_path) / (1024 * 1024)
 
-        print(f"\n✅ Конвертация завершена!")
-        print(f"📊 Обработано строк: {len(df):,}")
-        print(f"📋 Созданы индексы для: {created_indexes}")
-        print(f"⏱️  Время выполнения: {end_time - start_time:.2f} секунд")
-        print(f"💾 База данных сохранена в: {db_path}")
+        print("\n🎉 Готово")
+        print(f"📊 Всего загружено строк: {total_inserted}")
+        print(f"📦 Размер БД: {db_size_mb:.2f} MB")
+        print(f"⏱ Время: {elapsed:.2f} сек")
 
-        # Показываем размер файлов
-        csv_size = os.path.getsize(csv_path) / (1024*1024)
-        db_size = os.path.getsize(db_path) / (1024*1024)
-        print(f"📏 Размер CSV: {csv_size:.1f} MB")
-        print(f"📏 Размер DB: {db_size:.1f} MB")
+        if error_stats:
+            print("⚠️ Некорректный JSON встретился в полях:")
+            for field, count in error_stats.items():
+                print(f"   - {field}: {count}")
 
         return True
 
     except Exception as e:
-        print(f"❌ Ошибка конвертации: {e}")
-        import traceback
-        traceback.print_exc()
+        conn.close()
+        print(f"❌ Ошибка: {e}")
         return False
 
-def show_csv_info(csv_path: str = "data/jobs.csv"):
-    """Показать информацию о CSV файле"""
-    if not os.path.exists(csv_path):
-        print(f"❌ Файл {csv_path} не найден!")
-        print(f"Текущая директория: {os.getcwd()}")
-        return
-
-    print("📋 Информация о CSV файле:")
-    try:
-        df = pd.read_csv(csv_path, sep='\t', nrows=3)
-        df = clean_column_names(df)
-        df = remove_first_column(df)
-        print(f"Колонки: {list(df.columns)}")
-        print(f"Первые 3 строки:")
-        print(df.head(3))
-        total_rows = len(pd.read_csv(csv_path, sep='\t'))
-        print(f"\nОбщее количество строк: {total_rows}")
-    except Exception as e:
-        print(f"❌ Ошибка чтения файла: {e}")
-        import traceback
-        traceback.print_exc()
-
 if __name__ == "__main__":
-    csv_file = "../databases/job_ads.csv"
-    db_file = "../databases/job_ads.db"
+    BASE_DIR = Path(__file__).resolve().parent
+    csv_file = (BASE_DIR / "../database/job_ads.csv").resolve()
+    db_file = (BASE_DIR / "../database/job_ads.db").resolve()
 
-    print("🔍 Проверяем файлы...")
-    print(f"CSV файл: {csv_file}")
-    print(f"Путь существует: {os.path.exists(csv_file)}")
+    print("CSV файл:", csv_file)
+    print("CSV существует:", csv_file.exists())
 
-    show_csv_info(csv_file)
-    print("\n" + "="*50 + "\n")
-
-    csv_to_sqlite(csv_file, db_file)
+    ok = csv_to_sqlite(str(csv_file), str(db_file), chunksize=5000)
