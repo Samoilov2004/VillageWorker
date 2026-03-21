@@ -8,7 +8,6 @@ def create_test_dataset():
 
     script_dir = Path(__file__).resolve().parent
 
-    # Пути относительно расположения скрипта
     input_csv = script_dir / "../database/job_ads.csv"
     output_csv = script_dir / "../database/mini_jobs.csv"
 

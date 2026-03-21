@@ -1,5 +1,10 @@
 # Databases
 
+Запуск теста корректности
+```bash
+pytest -v  
+```
+
 ## Описание данных
 | Column | RU (Описание) | EN (Description) |
 |---|---|---|
@@ -49,15 +54,15 @@ JOB_LABELS = [
 
 ```bash
 brew install git-lfs
-git lfs install 
+git lfs install
 
-# Проверка установки 
+# Проверка установки
 git lfs version
 # Вывело - git-lfs/3.7.1 (GitHub; darwin arm64; go 1.25.3)
 
 # Будем отслеживать такие вот файлы
-git lfs track "*.csv" 
-git lfs track "*.db" 
+git lfs track "*.csv"
+git lfs track "*.db"
 
 git lfs track "*.joblib"  # Это тяжелые файлы с моделями, которые тоже так будем обрабатывать
 
