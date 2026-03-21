@@ -21,7 +21,7 @@ uvicorn ml_service.app.main:app --reload --host 127.0.0.1 --port 8001
 - ReDoc: http://127.0.0.1:8001/redoc
 - Health-check: http://127.0.0.1:8001/health
 
-Из корня репозитория запустить тесты, если что-то не так, то плакать
+Из корня репозитория запустить тесты, для проверки корректности работы
 ```bash
 pytest ml_service/tests -v
 ```
