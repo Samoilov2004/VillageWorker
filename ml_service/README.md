@@ -26,129 +26,23 @@ ML-микросервис для платформы цифрового хаба 
 - `/health`
 - `/ready`
 
-# API
+## Запуск микросервиса
+```bash
+python3 -m venv .mlvenv
+source .mlvenv/bin/activate
+pip install -r ml_service/requirements.txt
 
-## 1. Служебные endpoint'ы
-### `GET /health`
-Проверка, что сервис запущен.
-
-#### Response
-```json
-{"status": "ok"}
-```
----
-
-### `GET /ready`
-Проверка готовности сервиса:
-- загружены ли зависимости;
-- доступен ли внутренний индекс;
-- сколько сущностей проиндексировано.
-
-#### Response
-```json
-{
-  "status": "ready",   
-  "models_loaded": true,  
-   "index_available": true,   
-   "indexed_entities": {     
-     "job": 120,     
-     "resume": 55   
-     }
-   }
+uvicorn ml_service.app.main:app --reload --host 127.0.0.1 --port 8001
 ```
 
----
+## Запуск тестов
+```bash
+pytest ml_service/tests -v
+```
 
-## 2. Индексация
+## Документация API
+После запуска проекта будет доступна техническая документация к API
 
-Индексация нужна для того, чтобы backend передавал в ML-сервис сущности, по которым потом можно делать поиск и рекомендации.
-
----
-
-### `POST /api/ml/index/upsert`
-
-Добавляет или обновляет сущности во внутреннем индексе.
-
-#### Request
-
-json
-
-`{   "entity_type": "job",   "items": [     {       "id": "78577559",       "title": "Главный механик",       "description": "Требуется специалист по обслуживанию техники...",       "metadata": {         "city": "Владивосток",         "label": "Производство/инженерия"       }     }   ] }`
-
-#### Response
-
-json
-
-`{   "status": "ok",   "entity_type": "job",   "upserted": 1 }`
-
----
-
-### `POST /api/ml/index/delete`
-
-Удаляет сущности из внутреннего индекса.
-
-#### Request
-
-json
-
-`{   "entity_type": "job",   "ids": ["78577559", "78577560"] }`
-
-#### Response
-
-json
-
-`{   "status": "ok",   "entity_type": "job",   "deleted": 2 }`
-
----
-
-### `GET /api/ml/index/stats`
-
-Возвращает статистику по внутреннему индексу.
-
-#### Response
-
-json
-
-`{   "entities": {     "job": 120,     "resume": 55,     "announcement": 20   } }`
-
----
-
-## 3. Поиск
-
----
-
-### `POST /api/ml/search`
-
-Ищет наиболее релевантные объекты заданного типа.
-
-#### Request
-
-json
-
-`{   "entity_type": "job",   "query": "главный механик золотодобыча",   "top_k": 5,   "filters": {     "city": "Владивосток"   } }`
-
-#### Response
-
-json
-
-`{   "results": [     {       "id": "78577559",       "score": 0.91,       "title": "Главный механик",       "metadata": {         "city": "Владивосток",         "label": "Производство/инженерия"       }     }   ] }`
-
----
-
-### `POST /api/ml/search/rerank`
-
-Переупорядочивает уже отобранный список кандидатов по релевантности к пользовательскому запросу.
-
-Подходит для сценария, когда backend сам получил кандидатов из БД и хочет, чтобы ML-сервис их ранжировал.
-
-#### Request
-
-json
-
-`{   "query": "слесарь кипиа",   "items": [     {       "id": "1",       "title": "Слесарь КИПиА",       "description": "Сборка, ремонт и настройка приборов",       "metadata": {         "city": "Санкт-Петербург"       }     },     {       "id": "2",       "title": "Водитель",       "description": "Перевозка грузов",       "metadata": {         "city": "Санкт-Петербург"       }     }   ],   "top_k": 5 }`
-
-#### Response
-
-json
-
-`{   "results": [     {       "id": "1",       "score": 0.95,       "title": "Слесарь КИПиА",       "metadata": {         "city": "Санкт-Петербург"       }     },     {       "id": "2",       "score": 0.12,       "title": "Водитель",       "metadata": {         "city": "Санкт-Петербург"       }     }   ] }`
+- Swagger UI: `http://127.0.0.1:8001/docs`
+- ReDoc: `http://127.0.0.1:8001/redoc`
+- Health-check: `http://127.0.0.1:8001/health`
