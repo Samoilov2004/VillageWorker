@@ -7,7 +7,10 @@ ML-микросервис для платформы цифрового хаба 
 
 ## Ноутбуки обучения
 
-- [label-guess — выбор модели и метрики](https://www.kaggle.com/code/samoilovmikhail/label-guess-model-training)
+- https://www.kaggle.com/code/samoilovmikhail/bm25-x-sbert-relevant-job-search
+- https://www.kaggle.com/code/samoilovmikhail/tf-idf-label-guess-training
+- https://www.kaggle.com/code/samoilovmikhail/tf-idf-vs-rubert-spam-filtration
+- https://www.kaggle.com/code/samoilovmikhail/tf-idf-vs-s-bert-similar-vacancy-recomendation
 
 ---
 
