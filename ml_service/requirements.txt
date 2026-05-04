@@ -6,3 +6,7 @@ numpy
 scikit-learn
 joblib
 pytest
+rank_bm25
+pickle
+sentence_transformers
+transformers
