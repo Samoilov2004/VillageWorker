@@ -1,5 +1,8 @@
-fastapi==0.115.0
-uvicorn[standard]==0.30.6
-pydantic==2.9.2
-httpx==0.27.2
-pytest==8.3.3
+fastapi>=0.136.0,<1.0.0
+uvicorn[standard]>=0.30.0,<1.0.0
+pydantic>=2.12.0,<3.0.0
+httpx>=0.27.0,<1.0.0
+numpy
+scikit-learn
+joblib
+pytest

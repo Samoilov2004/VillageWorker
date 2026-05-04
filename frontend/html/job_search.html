@@ -156,6 +156,61 @@
             line-height: 1.45;
         }
 
+        .similar-jobs-block {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #2b2b2b;
+        }
+
+        .similar-jobs-title {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            font-weight: 800;
+            color: var(--accent-blue);
+            margin-bottom: 16px;
+        }
+
+        .similar-jobs-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .similar-job-card {
+            background: #141414;
+            border: 1px solid #2b2b2b;
+            border-radius: 18px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .similar-job-card:hover {
+            border-color: rgba(33, 150, 243, 0.7);
+            transform: translateY(-1px);
+        }
+
+        .similar-job-title {
+            font-size: 15px;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .similar-job-meta {
+            font-size: 13px;
+            color: #9ca3af;
+            line-height: 1.5;
+        }
+
+        .similar-job-score {
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--accent-blue);
+            font-weight: 700;
+        }
+
         @media (max-width: 768px) {
             .job-detail-grid {
                 grid-template-columns: 1fr;
@@ -325,6 +380,13 @@
             <div class="mb-4 text-sm uppercase tracking-widest text-[#2196F3] font-bold">Описание вакансии</div>
             <div id="job-modal-description" class="text-base text-gray-300 leading-7 whitespace-pre-line">
                 Описание отсутствует
+            </div>
+
+            <div class="similar-jobs-block">
+                <div class="similar-jobs-title">Похожие вакансии</div>
+                <div id="similar-jobs-list" class="similar-jobs-list">
+                    <div class="text-gray-500 text-sm">Откройте вакансию, чтобы увидеть рекомендации.</div>
+                </div>
             </div>
 
             <div class="mt-8 flex flex-col md:flex-row gap-3">
@@ -522,9 +584,12 @@
 
                 const job = await response.json();
                 fillJobModal(job);
+
                 document.getElementById('job-modal-backdrop').classList.add('active');
                 document.body.style.overflow = 'hidden';
                 lucide.createIcons();
+
+                await loadSimilarJobs(jobId);
             } catch (error) {
                 console.error('Ошибка загрузки вакансии:', error);
                 alert('Не удалось открыть вакансию');
@@ -548,6 +613,61 @@
             document.getElementById('job-detail-region').textContent = job.region || job.state || '—';
             document.getElementById('job-detail-type').textContent = formatType(job.type);
             document.getElementById('job-modal-description').textContent = cleanText(job.description || 'Описание отсутствует');
+        }
+
+        async function loadSimilarJobs(jobId) {
+            const container = document.getElementById('similar-jobs-list');
+
+            if (!container) return;
+
+            container.innerHTML = '<div class="text-gray-500 text-sm">Загружаем похожие вакансии...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}/similar`);
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => null);
+                    const message = errorData?.detail || `Ошибка HTTP ${response.status}`;
+                    throw new Error(message);
+                }
+
+                const data = await response.json();
+                const results = data.results || data.items || [];
+
+                renderSimilarJobs(results);
+            } catch (error) {
+                console.warn('Похожие вакансии недоступны:', error);
+                container.innerHTML = `
+                    <div class="text-gray-500 text-sm">
+                        Рекомендации временно недоступны. Проверьте, что ML-сервис запущен на 127.0.0.1:8001.
+                    </div>
+                `;
+            }
+        }
+
+        function renderSimilarJobs(similarJobs) {
+            const container = document.getElementById('similar-jobs-list');
+
+            if (!similarJobs || !similarJobs.length) {
+                container.innerHTML = '<div class="text-gray-500 text-sm">Похожие вакансии не найдены.</div>';
+                return;
+            }
+
+            container.innerHTML = similarJobs.slice(0, 5).map(item => {
+                const id = item.id || item.item_id;
+                const title = item.title || item.name || 'Вакансия';
+                const company = item.company || item.metadata?.company || 'Компания не указана';
+                const city = item.city || item.metadata?.city || item.metadata?.location || 'Город не указан';
+                const score = item.score != null ? Math.round(item.score * 100) : null;
+
+                return `
+                    <div class="similar-job-card" onclick="${id ? `openJob(${id})` : ''}">
+                        <div class="similar-job-title">${title}</div>
+                        <div class="similar-job-meta">${company} • ${city}</div>
+                        ${score !== null ? `<div class="similar-job-score">Сходство: ${score}%</div>` : ''}
+                    </div>
+                `;
+            }).join('');
         }
 
         function formatSalary(salary) {
