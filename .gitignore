@@ -208,3 +208,8 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+ml_service/models/spam_filtration/rubert_spam_model_best/
+*.safetensors
+*.bin
+*.pt
+*.pth
