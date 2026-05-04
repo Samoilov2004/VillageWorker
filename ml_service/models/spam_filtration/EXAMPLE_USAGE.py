@@ -1,23 +1,10 @@
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
-import torch
+import joblib
 import re
-import numpy as np
+from scipy.sparse import hstack
 
 import warnings
 
 warnings.filterwarnings("ignore")
-
-rubert_tokenizer = AutoTokenizer.from_pretrained("./rubert_spam_model_best")
-rubert_model = AutoModelForSequenceClassification.from_pretrained("./rubert_spam_model_best")
-rubert_model.eval()
-
-device = "cuda" if torch.cuda.is_available() else "cpu"
-rubert_model.to(device)
-
-sample_texts = [
-    "Требуется продавец в продуктовый магазин, официальное оформление.",
-    "Зарабатывай 100000 в день без опыта, пиши в Telegram прямо сейчас!"
-]
 
 def clean_text(text: str) -> str:
     text = text.lower()
@@ -27,34 +14,24 @@ def clean_text(text: str) -> str:
     text = re.sub(r"\s+", " ", text).strip()
     return text
 
+word_tfidf_loaded = joblib.load("word_tfidf.pkl")
+char_tfidf_loaded = joblib.load("char_tfidf.pkl")
+svm_loaded = joblib.load("linear_svc_spam.pkl")
+
+sample_texts = [
+    "Требуется продавец в продуктовый магазин, официальное оформление.",
+    "Зарабатывай 100000 в день без опыта, пиши в Telegram прямо сейчас!"
+]
+
 sample_texts_clean = [clean_text(x) for x in sample_texts]
 
-def predict_rubert(texts, tokenizer, model, device="cpu", max_length=128):
-    inputs = tokenizer(
-        texts,
-        truncation=True,
-        padding=True,
-        max_length=max_length,
-        return_tensors="pt"
-    )
+X_word_sample = word_tfidf_loaded.transform(sample_texts_clean)
+X_char_sample = char_tfidf_loaded.transform(sample_texts_clean)
+X_sample_combined = hstack([X_word_sample, X_char_sample])
 
-    inputs = {k: v.to(device) for k, v in inputs.items()}
+preds_svm = svm_loaded.predict(X_sample_combined)
 
-    with torch.no_grad():
-        outputs = model(**inputs)
-        probs = torch.softmax(outputs.logits, dim=1).cpu().numpy()
-        preds = np.argmax(probs, axis=1)
-
-    return preds, probs[:, 1]
-
-preds_rubert, probs_rubert = predict_rubert(
-    sample_texts_clean,
-    rubert_tokenizer,
-    rubert_model,
-    device=device
-)
-
-for text, pred, prob in zip(sample_texts, preds_rubert, probs_rubert):
+for text, pred in zip(sample_texts, preds_svm):
     print("=" * 80)
     print("TEXT:", text)
-    print("PRED:", int(pred), "SPAM_PROBA:", round(float(prob), 4))
+    print("PRED:", pred)
