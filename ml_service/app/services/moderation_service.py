@@ -1,23 +1,13 @@
+import math
 import re
+from pathlib import Path
 from typing import Dict, List
+
+import joblib
+from scipy.sparse import hstack
 
 
 class ModerationService:
-    """
-    Временная rule-based пре-модерация.
-    Потом сюда что-то лучше добавлю
-    """
-
-    SPAM_PATTERNS = [
-        r"быстрые деньги",
-        r"доход \d+",
-        r"без опыта",
-        r"срочно",
-        r"!!!",
-        r"100% доход",
-        r"легкий заработок",
-    ]
-
     FRAUD_PATTERNS = [
         r"переведи.*деньги",
         r"предоплата",
@@ -46,6 +36,29 @@ class ModerationService:
 
     URL_PATTERN = re.compile(r"https?://|www\.|t\.me/|telegram", re.IGNORECASE)
 
+    def __init__(self, models_dir: Path):
+        spam_dir = models_dir / "spam_filtration"
+        self._word_tfidf = joblib.load(spam_dir / "word_tfidf.pkl")
+        self._char_tfidf = joblib.load(spam_dir / "char_tfidf.pkl")
+        self._svm = joblib.load(spam_dir / "linear_svc_spam.pkl")
+
+    @staticmethod
+    def _clean_for_spam(text: str) -> str:
+        text = text.lower()
+        text = re.sub(r"http\S+|www\S+", " URL ", text)
+        text = re.sub(r"@\w+", " USERNAME ", text)
+        text = re.sub(r"\+?\d[\d\-\(\) ]{7,}\d", " PHONE ", text)
+        text = re.sub(r"\s+", " ", text).strip()
+        return text
+
+    def _ml_spam_score(self, text: str) -> float:
+        cleaned = self._clean_for_spam(text)
+        X_word = self._word_tfidf.transform([cleaned])
+        X_char = self._char_tfidf.transform([cleaned])
+        X = hstack([X_word, X_char])
+        decision = float(self._svm.decision_function(X)[0])
+        return round(1.0 / (1.0 + math.exp(-decision)), 4)
+
     def _score_patterns(self, text: str, patterns: List[str], weight: float = 0.3) -> float:
         score = 0.0
         for pattern in patterns:
@@ -53,32 +66,15 @@ class ModerationService:
                 score += weight
         return min(score, 1.0)
 
-    def _caps_score(self, text: str) -> float:
-        letters = [ch for ch in text if ch.isalpha()]
-        if not letters:
-            return 0.0
-        upper = sum(1 for ch in letters if ch.isupper())
-        ratio = upper / len(letters)
-        return 0.6 if ratio > 0.6 and len(letters) > 20 else 0.0
-
-    def _repetition_score(self, text: str) -> float:
-        if "!!!" in text or "???" in text:
-            return 0.3
-        return 0.0
-
     def check(self, title: str, description: str) -> dict:
         text = f"{title}\n{description}".strip()
 
         labels: Dict[str, float] = {
-            "spam": 0.0,
+            "spam": self._ml_spam_score(text),
             "fraud": 0.0,
             "drugs": 0.0,
             "toxicity": 0.0,
         }
-
-        labels["spam"] += self._score_patterns(text, self.SPAM_PATTERNS, 0.2)
-        labels["spam"] += self._caps_score(text)
-        labels["spam"] += self._repetition_score(text)
 
         labels["fraud"] += self._score_patterns(text, self.FRAUD_PATTERNS, 0.35)
         if self.URL_PATTERN.search(text):
@@ -90,7 +86,7 @@ class ModerationService:
         labels = {k: round(min(v, 1.0), 4) for k, v in labels.items()}
 
         reasons = []
-        if labels["spam"] >= 0.4:
+        if labels["spam"] >= 0.6:
             reasons.append("обнаружены признаки спама")
         if labels["fraud"] >= 0.5:
             reasons.append("обнаружены признаки мошеннического контента")

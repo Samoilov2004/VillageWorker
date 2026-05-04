@@ -1,82 +1,136 @@
+import json
+import math
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import numpy as np
+import pandas as pd
+
 from ml_service.app.services.embedding_service import EmbeddingService
-from ml_service.app.services.index_store import IndexStore
 
 
 class RecommendationService:
-    def __init__(self, store: IndexStore, embedding_service: EmbeddingService):
-        self.store = store
-        self.embedding_service = embedding_service
+    def __init__(self, models_dir: Path, embedding_service: EmbeddingService):
+        rec_dir = models_dir / "vacancy_recomendation"
 
-    def _matches_filters(self, item: dict, filters: Dict[str, Any]) -> bool:
-        if not filters:
-            return True
+        self._embeddings = np.load(rec_dir / "recommend_sbert_geo_embeddings.npy")
+        self._metadata = pd.read_csv(rec_dir / "recommend_sbert_geo_metadata.csv")
+        with open(rec_dir / "recommend_sbert_geo_config.json", "r", encoding="utf-8") as f:
+            self._config = json.load(f)
 
-        metadata = item.get("metadata", {})
-        for key, expected_value in filters.items():
-            if metadata.get(key) != expected_value:
-                return False
-        return True
+        self._id_to_idx: Dict[str, int] = {
+            str(v): i for i, v in enumerate(self._metadata["id"].astype(str))
+        }
+        self._embedding_service = embedding_service
 
-    def _score_against_collection(
+    @staticmethod
+    def _haversine_km(lat1, lon1, lat2, lon2) -> float:
+        if any(pd.isna(v) for v in [lat1, lon1, lat2, lon2]):
+            return float("nan")
+        R = 6371.0
+        phi1, phi2 = math.radians(lat1), math.radians(lat2)
+        d_phi = math.radians(lat2 - lat1)
+        d_lambda = math.radians(lon2 - lon1)
+        a = math.sin(d_phi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(d_lambda / 2) ** 2
+        return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    @staticmethod
+    def _geo_bonus(distance_km: float, max_bonus: float) -> float:
+        if math.isnan(distance_km):
+            return 0.0
+        if distance_km <= 10:
+            return max_bonus
+        elif distance_km <= 50:
+            return max_bonus * 0.7
+        elif distance_km <= 100:
+            return max_bonus * 0.4
+        elif distance_km <= 250:
+            return max_bonus * 0.15
+        return 0.0
+
+    def _rerank_candidates(
         self,
-        source_item: dict,
-        target_items: List[dict],
+        source_idx: int,
+        source_emb: np.ndarray,
+        source_label: str,
+        source_lat,
+        source_lon,
         top_k: int,
-        filters: Optional[Dict[str, Any]] = None
     ) -> List[dict]:
-        filters = filters or {}
-        source_text = self.embedding_service.item_to_text(source_item)
+        candidate_k = self._config["candidate_k"]
+        label_bonus = self._config["label_bonus"]
+        max_geo_bonus = self._config["max_geo_bonus"]
 
-        scored = []
-        for item in target_items:
-            if item["id"] == source_item.get("id"):
-                continue
+        semantic_scores = np.dot(self._embeddings, source_emb)
+        if source_idx >= 0:
+            semantic_scores[source_idx] = -1.0
 
-            if not self._matches_filters(item, filters):
-                continue
+        candidate_indices = np.argsort(semantic_scores)[::-1][:candidate_k]
 
-            target_text = self.embedding_service.item_to_text(item)
-            score = self.embedding_service.cosine_similarity(source_text, target_text)
+        reranked = []
+        for cand_idx in candidate_indices:
+            cand = self._metadata.iloc[cand_idx]
+            sem = float(semantic_scores[cand_idx])
+            lbl = label_bonus if str(cand.get("label", "")) == source_label else 0.0
+            dist = self._haversine_km(source_lat, source_lon, cand.get("lat"), cand.get("lon"))
+            geo = self._geo_bonus(dist, max_geo_bonus)
+            reranked.append({"idx": int(cand_idx), "final_score": sem + lbl + geo})
 
-            if score > 0:
-                scored.append({
-                    "id": item["id"],
-                    "score": round(score, 4),
-                    "title": item.get("title"),
-                    "metadata": item.get("metadata", {})
-                })
+        reranked.sort(key=lambda x: x["final_score"], reverse=True)
+        return reranked[:top_k]
 
-        scored.sort(key=lambda x: x["score"], reverse=True)
-        return scored[:top_k]
+    def _row_to_result(self, row, score: float) -> dict:
+        return {
+            "id": str(row["id"]),
+            "score": round(score, 4),
+            "title": str(row.get("title", "")),
+            "metadata": {
+                "label": str(row.get("label", "")),
+                "city": str(row.get("city", "")),
+                "region": str(row.get("region", "")),
+            },
+        }
 
     def similar(
         self,
         entity_type: str,
         top_k: int = 5,
-        item_id: str | None = None,
-        item: dict | None = None,
-        filters: Dict[str, Any] | None = None,
+        item_id: Optional[str] = None,
+        item: Optional[dict] = None,
+        filters: Optional[Dict[str, Any]] = None,
     ) -> List[dict]:
-        if item_id:
-            source_item = self.store.get(entity_type, item_id)
-            if not source_item:
-                raise ValueError(f"Item '{item_id}' not found in index '{entity_type}'")
-        elif item:
-            source_item = item
+        if item_id is not None:
+            idx = self._id_to_idx.get(str(item_id))
+            if idx is None:
+                raise ValueError(f"Vacancy '{item_id}' not found in recommendation index")
+            source_emb = self._embeddings[idx]
+            row = self._metadata.iloc[idx]
+            source_label = str(row.get("label", ""))
+            source_lat, source_lon = row.get("lat"), row.get("lon")
+            source_idx = idx
+        elif item is not None:
+            source_emb = self._embedding_service.encode(EmbeddingService.item_to_text(item))
+            meta = item.get("metadata", {})
+            source_label = str(meta.get("label", ""))
+            source_lat, source_lon = meta.get("lat"), meta.get("lon")
+            source_idx = -1
         else:
             raise ValueError("Either item_id or item must be provided")
 
-        target_items = self.store.list_items(entity_type)
-        return self._score_against_collection(source_item, target_items, top_k, filters)
+        top_items = self._rerank_candidates(source_idx, source_emb, source_label, source_lat, source_lon, top_k)
+        return [self._row_to_result(self._metadata.iloc[e["idx"]], e["final_score"]) for e in top_items]
 
     def match(
         self,
         source_item: dict,
         target_entity_type: str,
         top_k: int = 10,
-        filters: Dict[str, Any] | None = None,
+        filters: Optional[Dict[str, Any]] = None,
     ) -> List[dict]:
-        target_items = self.store.list_items(target_entity_type)
-        return self._score_against_collection(source_item, target_items, top_k, filters)
+        source_emb = self._embedding_service.encode(EmbeddingService.item_to_text(source_item))
+        meta = source_item.get("metadata", {})
+        source_label = str(meta.get("label", ""))
+        source_lat, source_lon = meta.get("lat"), meta.get("lon")
+
+        top_items = self._rerank_candidates(-1, source_emb, source_label, source_lat, source_lon, top_k)
+        return [self._row_to_result(self._metadata.iloc[e["idx"]], e["final_score"]) for e in top_items]

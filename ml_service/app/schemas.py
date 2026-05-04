@@ -103,3 +103,12 @@ class ModerationResponse(BaseModel):
     risk_score: float
     labels: Dict[str, float]
     reasons: List[str]
+
+
+class LabelRequest(BaseModel):
+    title: str
+    description: str = ""
+
+
+class LabelResponse(BaseModel):
+    label: str

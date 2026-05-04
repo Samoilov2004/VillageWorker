@@ -6,12 +6,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from ml_service.app.core.config import get_settings
 from ml_service.app.core.logger import setup_logger
 from ml_service.app.routes.index import router as index_router
+from ml_service.app.routes.label import router as label_router
 from ml_service.app.routes.moderation import router as moderation_router
 from ml_service.app.routes.recommend import router as recommend_router
 from ml_service.app.routes.search import router as search_router
 from ml_service.app.schemas import HealthResponse, ReadyResponse
 from ml_service.app.services.embedding_service import EmbeddingService
 from ml_service.app.services.index_store import IndexStore
+from ml_service.app.services.label_service import LabelService
 from ml_service.app.services.moderation_service import ModerationService
 from ml_service.app.services.recommendation_service import RecommendationService
 from ml_service.app.services.search_service import SearchService
@@ -26,13 +28,16 @@ async def lifespan(app: FastAPI):
 
     settings.data_dir.mkdir(parents=True, exist_ok=True)
     settings.index_dir.mkdir(parents=True, exist_ok=True)
-    settings.models_dir.mkdir(parents=True, exist_ok=True)
 
     index_store = IndexStore(settings.index_dir)
+
+    # shared SBERT encoder (loaded once, used by search + recommendation)
     embedding_service = EmbeddingService()
-    moderation_service = ModerationService()
-    search_service = SearchService(index_store, embedding_service)
-    recommendation_service = RecommendationService(index_store, embedding_service)
+
+    moderation_service = ModerationService(settings.models_dir)
+    search_service = SearchService(settings.models_dir, embedding_service)
+    recommendation_service = RecommendationService(settings.models_dir, embedding_service)
+    label_service = LabelService(settings.models_dir)
 
     app.state.settings = settings
     app.state.index_store = index_store
@@ -40,10 +45,10 @@ async def lifespan(app: FastAPI):
     app.state.moderation_service = moderation_service
     app.state.search_service = search_service
     app.state.recommendation_service = recommendation_service
+    app.state.label_service = label_service
 
     logger.info("ML service started")
     logger.info("API prefix: %s", settings.api_prefix)
-    logger.info("Index dir: %s", settings.index_dir)
     logger.info("Models dir: %s", settings.models_dir)
 
     yield
@@ -72,6 +77,7 @@ def create_app() -> FastAPI:
     app.include_router(search_router, prefix=settings.api_prefix)
     app.include_router(recommend_router, prefix=settings.api_prefix)
     app.include_router(moderation_router, prefix=settings.api_prefix)
+    app.include_router(label_router, prefix=settings.api_prefix)
 
     @app.get("/health", response_model=HealthResponse, tags=["system"])
     def health():

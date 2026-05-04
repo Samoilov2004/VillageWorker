@@ -24,7 +24,7 @@ def get_settings() -> Settings:
 
     data_dir = Path(os.getenv("ML_DATA_DIR", base_dir / "data")).resolve()
     index_dir = Path(os.getenv("ML_INDEX_DIR", data_dir / "indexes")).resolve()
-    models_dir = Path(os.getenv("ML_MODELS_DIR", data_dir / "models")).resolve()
+    models_dir = Path(os.getenv("ML_MODELS_DIR", base_dir / "models")).resolve()
 
     return Settings(
         app_name=os.getenv("ML_APP_NAME", "rural-hub-ml-service"),
