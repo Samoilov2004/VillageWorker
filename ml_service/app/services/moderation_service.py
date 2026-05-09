@@ -18,13 +18,18 @@ class ModerationService:
         r"крипт",
     ]
 
-    DRUG_PATTERNS = [
-        r"закладк",
-        r"меф",
-        r"амф",
-        r"марихуан",
-        r"соль",
-        r"наркот",
+    BANNED_PATTERNS = [
+        r"наркотик\w*",
+        r"оружи\w*",
+        r"убива\w*",
+        r"взрывчат\w*",
+        r"террорист\w*",
+        r"мефедрон\w*",
+        r"героин\w*",
+        r"кокаин\w*",
+        r"амфетамин\w*",
+        r"курительн\w*\s+смес\w*",
+        r"спайс\w*",
     ]
 
     TOXIC_PATTERNS = [
@@ -72,7 +77,7 @@ class ModerationService:
         labels: Dict[str, float] = {
             "spam": self._ml_spam_score(text),
             "fraud": 0.0,
-            "drugs": 0.0,
+            "banned": 0.0,
             "toxicity": 0.0,
         }
 
@@ -80,7 +85,7 @@ class ModerationService:
         if self.URL_PATTERN.search(text):
             labels["fraud"] = min(labels["fraud"] + 0.15, 1.0)
 
-        labels["drugs"] += self._score_patterns(text, self.DRUG_PATTERNS, 0.5)
+        labels["banned"] += self._score_patterns(text, self.BANNED_PATTERNS, 1.0)
         labels["toxicity"] += self._score_patterns(text, self.TOXIC_PATTERNS, 0.4)
 
         labels = {k: round(min(v, 1.0), 4) for k, v in labels.items()}
@@ -90,14 +95,19 @@ class ModerationService:
             reasons.append("обнаружены признаки спама")
         if labels["fraud"] >= 0.5:
             reasons.append("обнаружены признаки мошеннического контента")
-        if labels["drugs"] >= 0.5:
-            reasons.append("обнаружены признаки запрещённых веществ")
+        if labels["banned"] > 0:
+            reasons.append("обнаружены запрещённые слова")
         if labels["toxicity"] >= 0.4:
             reasons.append("обнаружены признаки токсичного контента")
 
         risk_score = round(max(labels.values()), 4)
 
-        if labels["drugs"] >= 0.5 or labels["fraud"] >= 0.8 or risk_score >= 0.85:
+        has_banned_words = labels["banned"] > 0
+        ml_ok = labels["spam"] < 0.6
+
+        if has_banned_words:
+            decision = "reject"
+        elif not ml_ok or labels["fraud"] >= 0.8 or risk_score >= 0.85:
             decision = "reject"
         elif risk_score >= 0.4:
             decision = "review"

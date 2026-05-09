@@ -47,7 +47,7 @@ async def create_user_job(body: JobCreateRequest):
         try:
             res = await client.post(
                 f"{ML_BASE_URL}/api/ml/moderation/check",
-                json={"text": f"{body.title} {body.description}", "entity_type": "job"},
+                json={"content_type": "job", "title": body.title, "description": body.description},
             )
             data = res.json()
             decision = data.get("decision", "allow")

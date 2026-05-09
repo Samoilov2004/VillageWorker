@@ -538,6 +538,7 @@
         let userLocation = null;
         let detectedCity = null;
         let currentJob = null;
+        let currentQuery = "";
 
         const CATEGORY_COLORS = {
             'Рабочий персонал/разнорабочие':           '#FF5722',
@@ -693,8 +694,9 @@
         }
 
         async function loadJobs(query = "") {
+            currentQuery = query;
             const container = document.getElementById('view-list');
-            container.innerHTML = '<div class="text-gray-400">Загрузка вакансий...</div>';
+            container.innerHTML = '<div class="text-gray-400 col-span-2">Загрузка вакансий...</div>';
 
             try {
                 const url = buildSearchUrl(query);
@@ -715,47 +717,83 @@
             }
         }
 
+        function escapeHtml(str) {
+            return String(str ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function jobCardHtml(job) {
+            return `
+                <div class="bg-[#1a1a1a] border border-gray-800 rounded-3xl p-8 hover:border-[#2196F3]/50 transition-all group">
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="text-[#2196F3] text-[10px] font-bold uppercase tracking-widest px-3 py-1 bg-[#2196F3]/10 rounded-full border border-[#2196F3]/20">
+                            ${escapeHtml(job.label || 'Вакансия')}
+                        </span>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2 group-hover:text-[#2196F3] transition-colors">
+                        ${escapeHtml(job.title || 'Без названия')}
+                    </h3>
+                    <div class="text-2xl font-black text-white mb-4">
+                        ${escapeHtml(job.salary_text || 'Не указана')}
+                    </div>
+                    <div class="flex flex-wrap gap-2 text-sm text-gray-400 mb-4">
+                        <span>${escapeHtml(job.company || 'Компания не указана')}</span>
+                        <span>•</span>
+                        <span>${escapeHtml(job.city || 'Город не указан')}</span>
+                        <span>•</span>
+                        <span>${escapeHtml(job.experience_text || 'Опыт не указан')}</span>
+                    </div>
+                    <div class="text-sm text-gray-300 mb-8 pb-6 border-b border-gray-800">
+                        ${escapeHtml(job.short_description || '')}
+                    </div>
+                    <button onclick="openJob(${job.id})" class="w-full bg-[#2196F3] text-white font-bold py-3 rounded-xl hover:bg-[#1976D2] transition-colors">
+                        Подробнее
+                    </button>
+                </div>`;
+        }
+
+        async function loadRecommendations() {
+            const grid = document.getElementById('recommendations-grid');
+            if (!grid) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/jobs?limit=6`);
+                if (!response.ok) throw new Error();
+                const data = await response.json();
+                const rJobs = data.items || [];
+                if (!rJobs.length) {
+                    grid.innerHTML = '<div class="text-gray-500 text-sm col-span-2">Рекомендации недоступны.</div>';
+                    return;
+                }
+                grid.innerHTML = rJobs.map(jobCardHtml).join('');
+            } catch {
+                grid.innerHTML = '<div class="text-gray-500 text-sm col-span-2">Не удалось загрузить рекомендации.</div>';
+            }
+        }
+
         function renderJobs() {
             const container = document.getElementById('view-list');
 
             if (!jobs.length) {
-                container.innerHTML = '<div class="text-gray-400">Ничего не найдено.</div>';
+                const queryMsg = currentQuery
+                    ? `По запросу «<span class="text-white font-bold">${escapeHtml(currentQuery)}</span>» ничего не найдено`
+                    : 'Вакансии не найдены';
+                container.innerHTML = `
+                    <div class="col-span-2">
+                        <div class="text-gray-400 text-lg mb-1">${queryMsg}</div>
+                        <div class="text-gray-600 text-sm mb-8">Попробуйте изменить запрос или посмотрите другие вакансии</div>
+                        <div class="text-xs font-bold text-[#2196F3] uppercase tracking-widest mb-4">Рекомендуемые вакансии</div>
+                        <div id="recommendations-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="text-gray-500 text-sm col-span-2">Загружаем рекомендации...</div>
+                        </div>
+                    </div>`;
+                loadRecommendations();
                 return;
             }
 
-            container.innerHTML = jobs.map(job => `
-                <div class="bg-[#1a1a1a] border border-gray-800 rounded-3xl p-8 hover:border-[#2196F3]/50 transition-all group">
-                    <div class="flex justify-between items-start mb-4">
-                        <span class="text-[#2196F3] text-[10px] font-bold uppercase tracking-widest px-3 py-1 bg-[#2196F3]/10 rounded-full border border-[#2196F3]/20">
-                            ${job.label || 'Вакансия'}
-                        </span>
-                    </div>
-
-                    <h3 class="text-xl font-bold text-white mb-2 group-hover:text-[#2196F3] transition-colors">
-                        ${job.title || 'Без названия'}
-                    </h3>
-
-                    <div class="text-2xl font-black text-white mb-4">
-                        ${job.salary_text || 'Не указана'}
-                    </div>
-
-                    <div class="flex flex-wrap gap-2 text-sm text-gray-400 mb-4">
-                        <span>${job.company || 'Компания не указана'}</span>
-                        <span>•</span>
-                        <span>${job.city || 'Город не указан'}</span>
-                        <span>•</span>
-                        <span>${job.experience_text || 'Опыт не указан'}</span>
-                    </div>
-
-                    <div class="text-sm text-gray-300 mb-8 pb-6 border-b border-gray-800">
-                        ${job.short_description || ''}
-                    </div>
-
-                    <button onclick="openJob(${job.id})" class="w-full bg-[#2196F3] text-white font-bold py-3 rounded-xl hover:bg-[#1976D2] transition-colors">
-                        Подробнее
-                    </button>
-                </div>
-            `).join('');
+            container.innerHTML = jobs.map(jobCardHtml).join('');
         }
 
         async function openJob(jobId) {
