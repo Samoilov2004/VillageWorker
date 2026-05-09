@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from ml_service.app.services.embedding_service import EmbeddingService
+from ml_service.app.services.faiss_index import FaissIndex
 
 
 class RecommendationService:
@@ -22,6 +23,7 @@ class RecommendationService:
             str(v): i for i, v in enumerate(self._metadata["id"].astype(str))
         }
         self._embedding_service = embedding_service
+        self._faiss_index = FaissIndex(self._embeddings)
 
     @staticmethod
     def _haversine_km(lat1, lon1, lat2, lon2) -> float:
@@ -61,20 +63,22 @@ class RecommendationService:
         label_bonus = self._config["label_bonus"]
         max_geo_bonus = self._config["max_geo_bonus"]
 
-        semantic_scores = np.dot(self._embeddings, source_emb)
-        if source_idx >= 0:
-            semantic_scores[source_idx] = -1.0
-
-        candidate_indices = np.argsort(semantic_scores)[::-1][:candidate_k]
+        # Fetch candidate_k+1 so we have room to drop the source item itself.
+        # FAISS heap selection: O(N + candidate_k·log candidate_k) instead of
+        # a full O(N·log N) argsort over all vectors.
+        sem_scores, cand_indices = self._faiss_index.search_top_k(
+            source_emb, candidate_k + 1
+        )
 
         reranked = []
-        for cand_idx in candidate_indices:
-            cand = self._metadata.iloc[cand_idx]
-            sem = float(semantic_scores[cand_idx])
+        for sem, cand_idx in zip(sem_scores, cand_indices):
+            if source_idx >= 0 and int(cand_idx) == source_idx:
+                continue
+            cand = self._metadata.iloc[int(cand_idx)]
             lbl = label_bonus if str(cand.get("label", "")) == source_label else 0.0
             dist = self._haversine_km(source_lat, source_lon, cand.get("lat"), cand.get("lon"))
             geo = self._geo_bonus(dist, max_geo_bonus)
-            reranked.append({"idx": int(cand_idx), "final_score": sem + lbl + geo})
+            reranked.append({"idx": int(cand_idx), "final_score": float(sem) + lbl + geo})
 
         reranked.sort(key=lambda x: x["final_score"], reverse=True)
         return reranked[:top_k]

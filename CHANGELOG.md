@@ -17,3 +17,10 @@
 - Баннер определения города: геолокация → Nominatim → «Ваш город — X?»
 - Баннер: «Да, верно» сохраняет в localStorage, «Изменить» → поиск по названию
 - Карта центрируется на определённом городе пользователя
+
+### ML-сервис
+- Добавлен `faiss-cpu` в `ml_service/requirements.txt`
+- Новый класс `FaissIndex` (`app/services/faiss_index.py`) — обёртка над `IndexFlatIP`
+- `SearchService`: SBERT-часть гибридного поиска переведена с `np.dot` на `FaissIndex.search_all`
+- `RecommendationService`: `np.dot + np.argsort` заменены на `FaissIndex.search_top_k(candidate_k)` — heap-отбор вместо полной сортировки
+- Для перехода на приближённый поиск при росте базы достаточно заменить `IndexFlatIP` на `IndexIVFFlat` в одном месте

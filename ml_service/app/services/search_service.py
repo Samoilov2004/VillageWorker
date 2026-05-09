@@ -9,6 +9,7 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 
 from ml_service.app.services.embedding_service import EmbeddingService
+from ml_service.app.services.faiss_index import FaissIndex
 
 
 class SearchService:
@@ -24,6 +25,7 @@ class SearchService:
         self._embeddings = np.load(search_dir / "search_sbert_embeddings.npy")
         self._metadata = pd.read_csv(search_dir / "search_metadata.csv")
         self._embedding_service = embedding_service
+        self._faiss_index = FaissIndex(self._embeddings)
 
     @staticmethod
     def _clean_text(text: str) -> str:
@@ -58,7 +60,7 @@ class SearchService:
         )
 
         query_emb = self._embedding_service.encode(query_clean)
-        sbert_norm = self._normalize(np.dot(self._embeddings, query_emb))
+        sbert_norm = self._normalize(self._faiss_index.search_all(query_emb))
 
         final_scores = alpha * bm25_norm + (1 - alpha) * sbert_norm
         top_indices = np.argsort(final_scores)[::-1][:top_k]
