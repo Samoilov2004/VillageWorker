@@ -163,9 +163,9 @@
             <a class="logo" href="../main.html"><img src="../files/images/logo/ЭТС 1_2 (FFCC00).png" width="200px" alt="Ошибка!"></a>
             <div>
                 <a href="profile.html">Профиль</a>
-                <a href="#">Отклики</a>
+                <a href="applications.html">Отклики</a>
                 <a href="job_search.html">Вакансии</a>
-                <a href="#">Поддержка</a>
+                <a href="support.html">Поддержка</a>
             </div>
         </div>
 
@@ -194,13 +194,30 @@
                 <a href="#"><img src="../files/images/icon/material-symbols_notifications-outline-rounded.png" alt="Ошибка!"></a>
             </div>
             <li><a href="profile.html" class="menu-item">Профиль</a></li>
-            <li><a href="#" class="menu-item">Отклики</a></li>
+            <li><a href="applications.html" class="menu-item">Отклики</a></li>
             <li><a href="job_search.html" class="menu-item">Вакансии</a></li>
-            <li><a href="#" class="menu-item">Поддержка</a></li>
+            <li><a href="support.html" class="menu-item">Поддержка</a></li>
         </ul>
     </header>
 
     <main class="max-w-5xl mx-auto px-4 py-12">
+
+        <!-- role toggle -->
+        <div class="flex justify-center mb-10">
+            <div class="bg-[#1a1a1a] border border-gray-800 rounded-2xl p-1 inline-flex gap-1">
+                <button id="btn-role-employee" onclick="setRole('employee')"
+                    class="px-7 py-2.5 rounded-xl text-sm font-bold transition-all bg-[#2196F3] text-white shadow">
+                    Соискатель
+                </button>
+                <button id="btn-role-employer" onclick="setRole('employer')"
+                    class="px-7 py-2.5 rounded-xl text-sm font-bold transition-all text-gray-400 hover:text-white">
+                    Работодатель
+                </button>
+            </div>
+        </div>
+
+        <!-- ═══ СОИСКАТЕЛЬ ═══ -->
+        <div id="section-employee">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="lg:col-span-1 space-y-6">
                 <div class="card p-8 text-center relative">
@@ -268,7 +285,144 @@
                 </div>
             </div>
         </div>
+        </div><!-- /section-employee -->
+
+        <!-- ═══ РАБОТОДАТЕЛЬ ═══ -->
+        <div id="section-employer" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                <!-- left: company card -->
+                <div class="lg:col-span-1 space-y-6">
+                    <div class="card p-8 text-center">
+                        <div class="w-24 h-24 rounded-2xl bg-[#2196F3]/10 border-2 border-[#2196F3]/30 flex items-center justify-center mx-auto mb-4">
+                            <i data-lucide="building-2" class="w-10 h-10 text-[#2196F3]"></i>
+                        </div>
+                        <h2 id="emp-display-name" class="text-xl font-bold mb-1">Моя Компания</h2>
+                        <p id="emp-display-city" class="text-gray-500 text-sm mb-6">Город не указан</p>
+                        <button onclick="openEditCompany()" class="w-full btn-outline flex items-center justify-center gap-2">
+                            <i data-lucide="edit-3" class="w-4 h-4"></i> Редактировать
+                        </button>
+                    </div>
+                    <div class="card p-6 space-y-3">
+                        <h3 class="font-bold text-gray-400 text-xs uppercase tracking-widest">Контакты</h3>
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-[#262626] rounded-lg"><i data-lucide="phone" class="w-4 h-4 text-[#2196F3]"></i></div>
+                            <p id="emp-display-phone" class="text-sm">Не указан</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-[#262626] rounded-lg"><i data-lucide="at-sign" class="w-4 h-4 text-[#2196F3]"></i></div>
+                            <p id="emp-display-email" class="text-sm">Не указана</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- right: vacancies -->
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-3xl font-bold">Мои вакансии</h2>
+                        <button onclick="openVacancyModal()" class="btn-primary flex items-center gap-2">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Создать вакансию
+                        </button>
+                    </div>
+                    <div id="employer-jobs-container" class="space-y-4">
+                        <div class="text-gray-500 text-sm">Загрузка...</div>
+                    </div>
+                </div>
+            </div>
+        </div><!-- /section-employer -->
+
     </main>
+
+    <!-- modal: edit company -->
+    <div id="company-modal" class="hidden fixed inset-0 z-[2000] modal-overlay flex items-center justify-center p-4">
+        <div class="card w-full max-w-lg p-8 space-y-4 overflow-y-auto max-h-[90vh]">
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="text-2xl font-bold">Данные компании</h3>
+                <button onclick="closeEditCompany()" class="text-gray-500 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="space-y-1">
+                <label class="text-[10px] text-gray-500 font-bold uppercase">Название компании</label>
+                <input id="emp-name" type="text" class="input-field" placeholder="ООО Агро-Плюс">
+            </div>
+            <div class="space-y-1">
+                <label class="text-[10px] text-gray-500 font-bold uppercase">Город</label>
+                <input id="emp-city" type="text" class="input-field" placeholder="Краснодар">
+            </div>
+            <div class="space-y-1">
+                <label class="text-[10px] text-gray-500 font-bold uppercase">Телефон</label>
+                <input id="emp-phone" type="text" class="input-field" placeholder="+7 (900) 000-00-00">
+            </div>
+            <div class="space-y-1">
+                <label class="text-[10px] text-gray-500 font-bold uppercase">Email</label>
+                <input id="emp-email" type="email" class="input-field" placeholder="hr@company.ru">
+            </div>
+            <div class="flex gap-4 pt-2">
+                <button onclick="closeEditCompany()" class="flex-1 btn-outline">Отмена</button>
+                <button onclick="saveCompany()" class="flex-1 btn-primary">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- modal: create vacancy -->
+    <div id="vacancy-modal" class="hidden fixed inset-0 z-[2000] modal-overlay flex items-center justify-center p-4">
+        <div class="card w-full max-w-2xl p-8 space-y-5 overflow-y-auto max-h-[90vh]">
+            <div class="flex justify-between items-center">
+                <h3 class="text-2xl font-bold">Создать вакансию</h3>
+                <button onclick="closeVacancyModal()" class="text-gray-500 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-[10px] text-gray-500 font-bold uppercase">Должность *</label>
+                <input id="vac-title" type="text" class="input-field" placeholder="Тракторист, агроном, сварщик..."
+                    oninput="scheduleLabelPreview()">
+                <div id="vac-label-preview" class="hidden mt-1 text-xs text-[#2196F3] font-bold"></div>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-[10px] text-gray-500 font-bold uppercase">Описание *</label>
+                <textarea id="vac-desc" rows="5" class="input-field resize-none"
+                    placeholder="Обязанности, требования, условия работы..."
+                    oninput="scheduleLabelPreview()"></textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="text-[10px] text-gray-500 font-bold uppercase">Компания</label>
+                    <input id="vac-company" type="text" class="input-field">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] text-gray-500 font-bold uppercase">Город</label>
+                    <input id="vac-city" type="text" class="input-field" placeholder="Краснодар">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] text-gray-500 font-bold uppercase">Зарплата от (₽)</label>
+                    <input id="vac-salary-min" type="number" class="input-field" placeholder="40000" min="0">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] text-gray-500 font-bold uppercase">Зарплата до (₽)</label>
+                    <input id="vac-salary-max" type="number" class="input-field" placeholder="70000" min="0">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] text-gray-500 font-bold uppercase">Опыт от (лет)</label>
+                    <input id="vac-exp-min" type="number" class="input-field" placeholder="0" min="0">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] text-gray-500 font-bold uppercase">Опыт до (лет)</label>
+                    <input id="vac-exp-max" type="number" class="input-field" placeholder="3" min="0">
+                </div>
+            </div>
+
+            <!-- moderation result -->
+            <div id="vac-mod-result" class="hidden rounded-2xl p-4 text-sm font-medium"></div>
+
+            <div class="flex gap-4 pt-2">
+                <button onclick="closeVacancyModal()" class="flex-1 btn-outline">Отмена</button>
+                <button id="vac-submit-btn" onclick="submitVacancy()" class="flex-1 btn-primary">
+                    Опубликовать
+                </button>
+            </div>
+        </div>
+    </div>
 
     <div id="profile-modal" class="hidden fixed inset-0 z-[2000] modal-overlay flex items-center justify-center p-4">
         <div class="card w-full max-w-lg p-8 space-y-4 overflow-y-auto max-h-[90vh] relative">
@@ -355,9 +509,9 @@
         <p>© 2026 "ЭТС" Все права защищены.</p>
         <div>
             <a href="profile.html">Профиль</a>
-            <a href="#">Отклики</a>
+            <a href="applications.html">Отклики</a>
             <a href="job_search.html">Вакансии</a>
-            <a href="#">Поддержка</a>
+            <a href="support.html">Поддержка</a>
         </div>
     </footer>
 
@@ -384,12 +538,6 @@
         ];
 
         let map, marker, searchTimeout;
-
-        document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-            updateUI();
-            renderResumes();
-        });
 
         function updateUI() {
             document.getElementById('display-name').textContent = userData.name;
@@ -580,6 +728,225 @@
             resumes = resumes.filter(r => r.id !== id);
             renderResumes();
         }
+
+        // ═══ РОЛИ ═══════════════════════════════════════════════════════════
+
+        let currentRole = localStorage.getItem('vw_role') || 'employee';
+
+        function setRole(role) {
+            currentRole = role;
+            localStorage.setItem('vw_role', role);
+            document.getElementById('section-employee').classList.toggle('hidden', role !== 'employee');
+            document.getElementById('section-employer').classList.toggle('hidden', role !== 'employer');
+
+            const btnE = document.getElementById('btn-role-employee');
+            const btnR = document.getElementById('btn-role-employer');
+            if (role === 'employee') {
+                btnE.className = 'px-7 py-2.5 rounded-xl text-sm font-bold transition-all bg-[#2196F3] text-white shadow';
+                btnR.className = 'px-7 py-2.5 rounded-xl text-sm font-bold transition-all text-gray-400 hover:text-white';
+            } else {
+                btnR.className = 'px-7 py-2.5 rounded-xl text-sm font-bold transition-all bg-[#2196F3] text-white shadow';
+                btnE.className = 'px-7 py-2.5 rounded-xl text-sm font-bold transition-all text-gray-400 hover:text-white';
+                loadEmployerJobs();
+            }
+            lucide.createIcons();
+        }
+
+        // ═══ ДАННЫЕ КОМПАНИИ ═════════════════════════════════════════════════
+
+        let companyData = JSON.parse(localStorage.getItem('vw_company') || '{}');
+
+        function updateCompanyUI() {
+            document.getElementById('emp-display-name').textContent = companyData.name || 'Моя Компания';
+            document.getElementById('emp-display-city').textContent = companyData.city || 'Город не указан';
+            document.getElementById('emp-display-phone').textContent = companyData.phone || 'Не указан';
+            document.getElementById('emp-display-email').textContent = companyData.email || 'Не указана';
+        }
+
+        function openEditCompany() {
+            document.getElementById('emp-name').value  = companyData.name  || '';
+            document.getElementById('emp-city').value  = companyData.city  || '';
+            document.getElementById('emp-phone').value = companyData.phone || '';
+            document.getElementById('emp-email').value = companyData.email || '';
+            document.getElementById('company-modal').classList.remove('hidden');
+        }
+
+        function closeEditCompany() {
+            document.getElementById('company-modal').classList.add('hidden');
+        }
+
+        function saveCompany() {
+            companyData = {
+                name:  document.getElementById('emp-name').value,
+                city:  document.getElementById('emp-city').value,
+                phone: document.getElementById('emp-phone').value,
+                email: document.getElementById('emp-email').value,
+            };
+            localStorage.setItem('vw_company', JSON.stringify(companyData));
+            updateCompanyUI();
+            closeEditCompany();
+        }
+
+        // ═══ СПИСОК ВАКАНСИЙ РАБОТОДАТЕЛЯ ════════════════════════════════════
+
+        async function loadEmployerJobs() {
+            const container = document.getElementById('employer-jobs-container');
+            container.innerHTML = '<div class="text-gray-500 text-sm">Загрузка...</div>';
+            try {
+                const res = await fetch('http://127.0.0.1:8000/api/user-jobs');
+                const data = await res.json();
+                renderEmployerJobs(data.items || []);
+            } catch {
+                container.innerHTML = '<div class="text-gray-500 text-sm">Не удалось загрузить вакансии. Проверьте, что backend запущен.</div>';
+            }
+        }
+
+        const MOD_BADGE = {
+            ok:     { cls: 'bg-green-500/10 text-green-400 border border-green-500/20',  text: 'Опубликована' },
+            review: { cls: 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20', text: 'На проверке' },
+            reject: { cls: 'bg-red-500/10 text-red-400 border border-red-500/20',        text: 'Некачественная — перепишите' },
+        };
+
+        function renderEmployerJobs(jobs) {
+            const container = document.getElementById('employer-jobs-container');
+            if (!jobs.length) {
+                container.innerHTML = '<div class="text-gray-500 text-sm">Вакансий ещё нет. Создайте первую!</div>';
+                return;
+            }
+            container.innerHTML = jobs.map(j => {
+                const badge = MOD_BADGE[j.mod_status] || MOD_BADGE.ok;
+                const salary = j.salary_min
+                    ? `${Number(j.salary_min).toLocaleString('ru')} – ${Number(j.salary_max||j.salary_min).toLocaleString('ru')} ₽`
+                    : 'Зарплата не указана';
+                const date = j.created_at ? new Date(j.created_at).toLocaleDateString('ru') : '';
+                return `
+                <div class="card p-6 hover:border-[#2196F3]/50 transition-all">
+                    <div class="flex justify-between items-start gap-4 mb-3">
+                        <div>
+                            <span class="text-[10px] font-bold uppercase text-[#2196F3] tracking-widest">${j.label || 'Категория'}</span>
+                            <h3 class="text-lg font-bold mt-1">${j.title}</h3>
+                        </div>
+                        <span class="text-xs px-3 py-1 rounded-full whitespace-nowrap ${badge.cls}">${badge.text}</span>
+                    </div>
+                    <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-400">
+                        <span>${j.company || '—'}</span>
+                        <span>•</span><span>${j.city || '—'}</span>
+                        <span>•</span><span>${salary}</span>
+                    </div>
+                    ${j.mod_status === 'reject' ? `<p class="mt-3 text-xs text-red-400">${j.mod_reasons || 'Обнаружены признаки нежелательного контента'}</p>` : ''}
+                    <p class="mt-3 text-xs text-gray-600">${date}</p>
+                </div>`;
+            }).join('');
+        }
+
+        // ═══ СОЗДАНИЕ ВАКАНСИИ ════════════════════════════════════════════════
+
+        let labelPreviewTimer = null;
+
+        function openVacancyModal() {
+            document.getElementById('vac-company').value = companyData.name || '';
+            document.getElementById('vac-city').value    = companyData.city || '';
+            document.getElementById('vac-title').value = '';
+            document.getElementById('vac-desc').value  = '';
+            document.getElementById('vac-salary-min').value = '';
+            document.getElementById('vac-salary-max').value = '';
+            document.getElementById('vac-exp-min').value  = '';
+            document.getElementById('vac-exp-max').value  = '';
+            document.getElementById('vac-label-preview').classList.add('hidden');
+            document.getElementById('vac-mod-result').classList.add('hidden');
+            document.getElementById('vac-submit-btn').disabled = false;
+            document.getElementById('vacancy-modal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeVacancyModal() {
+            document.getElementById('vacancy-modal').classList.add('hidden');
+        }
+
+        function scheduleLabelPreview() {
+            clearTimeout(labelPreviewTimer);
+            labelPreviewTimer = setTimeout(fetchLabelPreview, 700);
+        }
+
+        async function fetchLabelPreview() {
+            const title = document.getElementById('vac-title').value.trim();
+            const desc  = document.getElementById('vac-desc').value.trim();
+            if (!title && !desc) return;
+            try {
+                const res = await fetch('http://127.0.0.1:8001/api/ml/label/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, description: desc }),
+                });
+                const data = await res.json();
+                if (data.label) {
+                    const el = document.getElementById('vac-label-preview');
+                    el.textContent = '→ Категория: ' + data.label;
+                    el.classList.remove('hidden');
+                }
+            } catch {}
+        }
+
+        async function submitVacancy() {
+            const title   = document.getElementById('vac-title').value.trim();
+            const desc    = document.getElementById('vac-desc').value.trim();
+            const company = document.getElementById('vac-company').value.trim();
+            const city    = document.getElementById('vac-city').value.trim();
+            if (!title || !desc) { alert('Заполните должность и описание'); return; }
+
+            const btn = document.getElementById('vac-submit-btn');
+            btn.disabled = true;
+            btn.textContent = 'Публикуем...';
+
+            const modEl = document.getElementById('vac-mod-result');
+            modEl.classList.add('hidden');
+
+            try {
+                const res = await fetch('http://127.0.0.1:8000/api/user-jobs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title, description: desc, company, city,
+                        salary_min: parseInt(document.getElementById('vac-salary-min').value) || null,
+                        salary_max: parseInt(document.getElementById('vac-salary-max').value) || null,
+                        experience_min: parseInt(document.getElementById('vac-exp-min').value) || 0,
+                        experience_max: parseInt(document.getElementById('vac-exp-max').value) || 0,
+                    }),
+                });
+                const data = await res.json();
+
+                modEl.classList.remove('hidden');
+                if (data.mod_status === 'reject') {
+                    modEl.className = 'rounded-2xl p-4 text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20';
+                    modEl.textContent = '⚠ Вакансия некачественная — перепишите описание. ' + (data.mod_reasons?.join(', ') || '');
+                } else if (data.mod_status === 'review') {
+                    modEl.className = 'rounded-2xl p-4 text-sm font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20';
+                    modEl.textContent = '🕐 Вакансия отправлена на проверку модератором.';
+                } else {
+                    modEl.className = 'rounded-2xl p-4 text-sm font-medium bg-green-500/10 text-green-400 border border-green-500/20';
+                    modEl.textContent = '✓ Вакансия опубликована! Категория: ' + (data.label || '—');
+                }
+
+                await loadEmployerJobs();
+                btn.textContent = 'Готово';
+            } catch {
+                modEl.className = 'rounded-2xl p-4 text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20';
+                modEl.textContent = 'Ошибка: проверьте, что backend запущен (порт 8000).';
+                modEl.classList.remove('hidden');
+                btn.disabled = false;
+                btn.textContent = 'Опубликовать';
+            }
+        }
+
+        // ═══ ИНИЦИАЛИЗАЦИЯ ════════════════════════════════════════════════════
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            updateUI();
+            renderResumes();
+            updateCompanyUI();
+            setRole(currentRole);
+        });
     </script>
 </body>
 </html>

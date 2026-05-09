@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="../files/images/logo/ЭТС 2 (FFCC00).png">
+    <title>ЭТС / Поддержка</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="../css/media.css">
+    <style>
+        body { color: white; font-family: 'Comfortaa', Arial, sans-serif; margin: 0; padding: 0; background-color: #1D1D1D; }
+        :root { --accent-blue: #2196F3; }
+        .card { background: #1a1a1a; border: 1px solid #333; border-radius: 24px; }
+        .input-field { background: #262626; border: 1px solid #444; border-radius: 12px; padding: 12px 16px; width: 100%; color: white; transition: border-color 0.2s; box-sizing: border-box; }
+        .input-field:focus { border-color: var(--accent-blue); outline: none; }
+        details > summary { list-style: none; cursor: pointer; }
+        details > summary::-webkit-details-marker { display: none; }
+        details[open] .faq-chevron { transform: rotate(180deg); }
+        .faq-chevron { transition: transform 0.2s; }
+        .burger_icon { display: flex; text-align: center; margin: 0 auto; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="menu">
+            <a class="logo" href="../main.html"><img src="../files/images/logo/ЭТС 1_2 (FFCC00).png" width="200px" alt="Ошибка!"></a>
+            <div>
+                <a href="profile.html">Профиль</a>
+                <a href="applications.html">Отклики</a>
+                <a href="job_search.html">Вакансии</a>
+                <a href="support.html">Поддержка</a>
+            </div>
+        </div>
+        <div class="add_menu">
+            <div><img src="../files/images/icon/material-symbols_navigation-outline-rounded.png"><a class="city" href="#">Москва</a></div>
+            <a href="#"><img src="../files/images/icon/material-symbols_mail-outline-rounded.png" alt=""></a>
+            <a href="#"><img src="../files/images/icon/material-symbols_favorite-outline-rounded.png" alt=""></a>
+            <a href="#"><img src="../files/images/icon/material-symbols_notifications-outline-rounded.png" alt=""></a>
+            <button class="create_resume" onclick="window.location.href='create.html'">Создать резюме</button>
+        </div>
+        <div class="gorod"><img src="../files/images/icon/material-symbols_navigation-outline-rounded.png"><a class="city" href="#">Москва</a></div>
+        <input type="checkbox" id="burger-checkbox" class="burger-checkbox">
+        <label class="burger" for="burger-checkbox"></label>
+        <ul class="menu-list">
+            <div class="burger_icon">
+                <a href="#"><img src="../files/images/icon/material-symbols_mail-outline-rounded.png" alt=""></a>
+                <a href="#"><img src="../files/images/icon/material-symbols_favorite-outline-rounded.png" alt=""></a>
+                <a href="#"><img src="../files/images/icon/material-symbols_notifications-outline-rounded.png" alt=""></a>
+            </div>
+            <li><a href="profile.html" class="menu-item">Профиль</a></li>
+            <li><a href="applications.html" class="menu-item">Отклики</a></li>
+            <li><a href="job_search.html" class="menu-item">Вакансии</a></li>
+            <li><a href="support.html" class="menu-item">Поддержка</a></li>
+        </ul>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-12 space-y-12">
+
+        <div>
+            <h1 class="text-4xl font-bold mb-2">Поддержка</h1>
+            <p class="text-gray-400">Мы здесь, чтобы помочь. Найдите ответ в FAQ или напишите нам напрямую.</p>
+        </div>
+
+        <!-- contact cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="card p-6 text-center space-y-3">
+                <div class="w-12 h-12 rounded-2xl bg-[#2196F3]/10 flex items-center justify-center mx-auto">
+                    <i data-lucide="mail" class="w-6 h-6 text-[#2196F3]"></i>
+                </div>
+                <h3 class="font-bold text-sm">Email</h3>
+                <p class="text-gray-400 text-sm">support@ets-village.ru</p>
+            </div>
+            <div class="card p-6 text-center space-y-3">
+                <div class="w-12 h-12 rounded-2xl bg-[#2196F3]/10 flex items-center justify-center mx-auto">
+                    <i data-lucide="phone" class="w-6 h-6 text-[#2196F3]"></i>
+                </div>
+                <h3 class="font-bold text-sm">Телефон</h3>
+                <p class="text-gray-400 text-sm">8-800-000-00-00 (бесплатно)</p>
+            </div>
+            <div class="card p-6 text-center space-y-3">
+                <div class="w-12 h-12 rounded-2xl bg-[#2196F3]/10 flex items-center justify-center mx-auto">
+                    <i data-lucide="clock" class="w-6 h-6 text-[#2196F3]"></i>
+                </div>
+                <h3 class="font-bold text-sm">Режим работы</h3>
+                <p class="text-gray-400 text-sm">Пн–Пт, 9:00–18:00 МСК</p>
+            </div>
+        </div>
+
+        <!-- FAQ -->
+        <div>
+            <h2 class="text-2xl font-bold mb-6">Частые вопросы</h2>
+            <div class="space-y-3" id="faq-list"></div>
+        </div>
+
+        <!-- contact form -->
+        <div class="card p-8">
+            <h2 class="text-2xl font-bold mb-6">Написать в поддержку</h2>
+            <div class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-[10px] text-gray-500 font-bold uppercase">Имя</label>
+                        <input id="sup-name" type="text" class="input-field" placeholder="Иван Иванов">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] text-gray-500 font-bold uppercase">Email</label>
+                        <input id="sup-email" type="email" class="input-field" placeholder="ivan@mail.ru">
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] text-gray-500 font-bold uppercase">Тема</label>
+                    <select id="sup-topic" class="input-field">
+                        <option>Технический вопрос</option>
+                        <option>Проблема с откликом</option>
+                        <option>Вопрос о вакансии</option>
+                        <option>Жалоба на контент</option>
+                        <option>Другое</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] text-gray-500 font-bold uppercase">Сообщение</label>
+                    <textarea id="sup-msg" rows="5" class="input-field resize-none" placeholder="Опишите вашу проблему подробно..."></textarea>
+                </div>
+                <div id="sup-result" class="hidden text-sm font-medium rounded-xl px-4 py-3"></div>
+                <button onclick="sendSupport()"
+                    class="w-full bg-[#2196F3] text-white font-bold py-3.5 rounded-2xl hover:bg-[#1976D2] transition-all">
+                    Отправить
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <footer>
+        <a href="../main.html"><img src="../files/images/logo/ЭТС 1_2 (FFCC00).png" width="200px" alt="Ошибка!"></a>
+        <p>© 2026 "ЭТС" Все права защищены.</p>
+        <div>
+            <a href="profile.html">Профиль</a>
+            <a href="applications.html">Отклики</a>
+            <a href="job_search.html">Вакансии</a>
+            <a href="support.html">Поддержка</a>
+        </div>
+    </footer>
+
+    <script>
+        const FAQ = [
+            {
+                q: 'Как откликнуться на вакансию?',
+                a: 'Откройте вакансию на странице поиска, нажмите «Подробнее», затем «Откликнуться». Введите имя и телефон — отклик будет отправлен работодателю.',
+            },
+            {
+                q: 'Как опубликовать вакансию от имени компании?',
+                a: 'Перейдите в Профиль → выберите роль «Работодатель» → нажмите «Создать вакансию». Система автоматически определит категорию и проверит описание.',
+            },
+            {
+                q: 'Почему вакансия получила статус «Некачественная»?',
+                a: 'ML-модель модерации обнаружила признаки нежелательного контента: спам, подозрительные обещания или нецензурную лексику. Перепишите описание и попробуйте снова.',
+            },
+            {
+                q: 'Работает ли сайт в моём регионе?',
+                a: 'Да. База содержит вакансии из всех регионов России. Используйте фильтр по географии или карту для поиска рядом с вашим населённым пунктом.',
+            },
+            {
+                q: 'Как работает «Похожие вакансии»?',
+                a: 'ML-сервис использует семантический поиск на базе нейросетевых эмбеддингов (SBERT) — находит вакансии с похожим смыслом, а не только по ключевым словам.',
+            },
+            {
+                q: 'Мои данные в безопасности?',
+                a: 'Данные профиля хранятся только в вашем браузере (localStorage). Платформа не передаёт персональные данные третьим лицам.',
+            },
+        ];
+
+        function renderFaq() {
+            document.getElementById('faq-list').innerHTML = FAQ.map((item, i) => `
+                <details class="card px-6 py-4 group">
+                    <summary class="flex items-center justify-between gap-4">
+                        <span class="font-bold text-sm">${item.q}</span>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-gray-500 faq-chevron flex-shrink-0"></i>
+                    </summary>
+                    <p class="mt-4 text-sm text-gray-400 leading-relaxed">${item.a}</p>
+                </details>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function sendSupport() {
+            const name  = document.getElementById('sup-name').value.trim();
+            const email = document.getElementById('sup-email').value.trim();
+            const msg   = document.getElementById('sup-msg').value.trim();
+            const res   = document.getElementById('sup-result');
+            if (!name || !email || !msg) {
+                res.className = 'text-sm font-medium rounded-xl px-4 py-3 bg-red-500/10 text-red-400 border border-red-500/20';
+                res.textContent = 'Заполните имя, email и сообщение.';
+                res.classList.remove('hidden'); return;
+            }
+            // demo: save to localStorage
+            const tickets = JSON.parse(localStorage.getItem('vw_support_tickets') || '[]');
+            tickets.push({ name, email, topic: document.getElementById('sup-topic').value, msg, date: new Date().toISOString() });
+            localStorage.setItem('vw_support_tickets', JSON.stringify(tickets));
+
+            res.className = 'text-sm font-medium rounded-xl px-4 py-3 bg-green-500/10 text-green-400 border border-green-500/20';
+            res.textContent = '✓ Сообщение сохранено. Мы ответим в течение 1–2 рабочих дней.';
+            res.classList.remove('hidden');
+            document.getElementById('sup-name').value  = '';
+            document.getElementById('sup-email').value = '';
+            document.getElementById('sup-msg').value   = '';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderFaq();
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>

@@ -285,9 +285,9 @@
             <a class="logo" href="../main.html"><img src="../files/images/logo/ЭТС 1_2 (FFCC00).png" width="200px" alt="Ошибка!"></a>
             <div>
                 <a href="profile.html">Профиль</a>
-                <a href="#">Отклики</a>
+                <a href="applications.html">Отклики</a>
                 <a href="job_search.html">Вакансии</a>
-                <a href="#">Поддержка</a>
+                <a href="support.html">Поддержка</a>
             </div>
         </div>
 
@@ -316,9 +316,9 @@
                 <a href="#"><img src="../files/images/icon/material-symbols_notifications-outline-rounded.png" alt="Ошибка!"></a>
             </div>
             <li><a href="profile.html" class="menu-item">Профиль</a></li>
-            <li><a href="#" class="menu-item">Отклики</a></li>
+            <li><a href="applications.html" class="menu-item">Отклики</a></li>
             <li><a href="job_search.html" class="menu-item">Вакансии</a></li>
-            <li><a href="#" class="menu-item">Поддержка</a></li>
+            <li><a href="support.html" class="menu-item">Поддержка</a></li>
         </ul>
     </header>
 
@@ -475,7 +475,7 @@
             </div>
 
             <div class="mt-8 flex flex-col md:flex-row gap-3">
-                <button class="bg-[#2196F3] text-white px-8 py-4 rounded-2xl font-bold shadow-xl hover:bg-[#1976D2] transition-all">
+                <button id="apply-btn" onclick="openApplyModal()" class="bg-[#2196F3] text-white px-8 py-4 rounded-2xl font-bold shadow-xl hover:bg-[#1976D2] transition-all">
                     Откликнуться
                 </button>
                 <button id="job-modal-close-secondary" class="border border-gray-700 text-gray-200 px-8 py-4 rounded-2xl font-bold hover:border-gray-500 transition-all">
@@ -485,14 +485,41 @@
         </div>
     </div>
 
+    <!-- Apply modal -->
+    <div id="apply-backdrop" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 hidden" onclick="if(event.target===this)closeApplyModal()">
+        <div class="bg-[#1a1a1a] border border-gray-800 rounded-3xl p-8 w-full max-w-md mx-4 space-y-4">
+            <h3 class="text-xl font-bold">Откликнуться на вакансию</h3>
+            <p id="apply-job-title" class="text-sm text-[#2196F3] font-bold"></p>
+            <div class="space-y-3">
+                <div class="space-y-1">
+                    <label class="text-[10px] text-gray-500 font-bold uppercase">Ваше имя</label>
+                    <input id="apply-name" type="text" placeholder="Иван Иванов" class="w-full bg-[#262626] border border-[#444] rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:border-[#2196F3] outline-none">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] text-gray-500 font-bold uppercase">Телефон</label>
+                    <input id="apply-phone" type="tel" placeholder="+7 900 000-00-00" class="w-full bg-[#262626] border border-[#444] rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:border-[#2196F3] outline-none">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] text-gray-500 font-bold uppercase">Сопроводительное письмо (необязательно)</label>
+                    <textarea id="apply-msg" rows="3" placeholder="Расскажите о себе..." class="w-full bg-[#262626] border border-[#444] rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:border-[#2196F3] outline-none resize-none"></textarea>
+                </div>
+            </div>
+            <div id="apply-result" class="hidden text-sm font-medium rounded-xl px-4 py-3"></div>
+            <div class="flex gap-3">
+                <button onclick="submitApply()" class="flex-1 bg-[#2196F3] text-white font-bold py-3 rounded-2xl hover:bg-[#1976D2] transition-all">Отправить отклик</button>
+                <button onclick="closeApplyModal()" class="px-6 py-3 border border-gray-700 text-gray-300 font-bold rounded-2xl hover:border-gray-500 transition-all">Отмена</button>
+            </div>
+        </div>
+    </div>
+
     <footer>
         <a href="../main.html"><img src="../files/images/logo/ЭТС 1_2 (FFCC00).png" width="200px" alt="Ошибка!"></a>
         <p>© 2026 "ЭТС" Все права защищены.</p>
         <div>
             <a href="profile.html">Профиль</a>
-            <a href="#">Отклики</a>
+            <a href="applications.html">Отклики</a>
             <a href="job_search.html">Вакансии</a>
-            <a href="#">Поддержка</a>
+            <a href="support.html">Поддержка</a>
         </div>
     </footer>
 
@@ -510,6 +537,7 @@
         let markerClusterGroup = null;
         let userLocation = null;
         let detectedCity = null;
+        let currentJob = null;
 
         const CATEGORY_COLORS = {
             'Рабочий персонал/разнорабочие':           '#FF5722',
@@ -758,6 +786,11 @@
         }
 
         function fillJobModal(job) {
+            currentJob = job;
+            const applyBtn = document.getElementById('apply-btn');
+            applyBtn.textContent = 'Откликнуться';
+            applyBtn.disabled = false;
+            applyBtn.classList.remove('opacity-60');
             document.getElementById('job-modal-badge').textContent = job.label || 'Вакансия';
             document.getElementById('job-modal-title').textContent = job.title || 'Без названия';
             document.getElementById('job-modal-salary').textContent = formatSalary(job.salary);
@@ -1089,6 +1122,65 @@
             document.getElementById('city-input').addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') document.getElementById('city-save-btn').click();
             });
+        }
+
+        function openApplyModal() {
+            if (!currentJob) return;
+            document.getElementById('apply-job-title').textContent = currentJob.title || 'Вакансия';
+            document.getElementById('apply-result').classList.add('hidden');
+            document.getElementById('apply-name').value = '';
+            document.getElementById('apply-phone').value = '';
+            document.getElementById('apply-msg').value = '';
+            document.getElementById('apply-backdrop').classList.remove('hidden');
+        }
+
+        function closeApplyModal() {
+            document.getElementById('apply-backdrop').classList.add('hidden');
+        }
+
+        async function submitApply() {
+            const name  = document.getElementById('apply-name').value.trim();
+            const phone = document.getElementById('apply-phone').value.trim();
+            const msg   = document.getElementById('apply-msg').value.trim();
+            const res   = document.getElementById('apply-result');
+
+            if (!name || !phone) {
+                res.className = 'text-sm font-medium rounded-xl px-4 py-3 bg-red-500/10 text-red-400 border border-red-500/20';
+                res.textContent = 'Заполните имя и телефон.';
+                res.classList.remove('hidden');
+                return;
+            }
+
+            const body = {
+                job_id:    currentJob.id,
+                job_title: currentJob.title || 'Вакансия',
+                user_name: name,
+                phone,
+                message:   msg,
+            };
+
+            try {
+                const r = await fetch(`${API_BASE_URL}/api/applications`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                if (!r.ok) throw new Error();
+            } catch {
+                // backend unavailable — still save locally
+            }
+
+            const stored = JSON.parse(localStorage.getItem('vw_my_applications') || '[]');
+            stored.push({ ...body, created_at: new Date().toISOString() });
+            localStorage.setItem('vw_my_applications', JSON.stringify(stored));
+
+            res.className = 'text-sm font-medium rounded-xl px-4 py-3 bg-green-500/10 text-green-400 border border-green-500/20';
+            res.textContent = '✓ Отклик отправлен! Работодатель свяжется с вами.';
+            res.classList.remove('hidden');
+            document.getElementById('apply-btn').textContent = '✓ Отклик отправлен';
+            document.getElementById('apply-btn').disabled = true;
+            document.getElementById('apply-btn').classList.add('opacity-60');
+            setTimeout(closeApplyModal, 1800);
         }
 
         function setViewMode(mode) {

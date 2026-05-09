@@ -262,6 +262,14 @@ a{
     margin-top: -250px;
 }
 
+body{
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+main{
+    flex: 1;
+}
 footer{
     background-color: #1D1D1D;
     color: white;
@@ -270,6 +278,7 @@ footer{
     justify-content: space-between;
     text-align: center;
     align-items: center;
+    margin-top: auto;
 }
 footer p{
     font-size: 20px;

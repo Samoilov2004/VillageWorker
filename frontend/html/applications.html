@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="../files/images/logo/ЭТС 2 (FFCC00).png">
+    <title>ЭТС / Отклики</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="../css/media.css">
+    <style>
+        body { color: white; font-family: 'Comfortaa', Arial, sans-serif; margin: 0; padding: 0; background-color: #1D1D1D; }
+        :root { --accent-blue: #2196F3; }
+        .card { background: #1a1a1a; border: 1px solid #333; border-radius: 24px; }
+        .burger_icon { display: flex; text-align: center; margin: 0 auto; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="menu">
+            <a class="logo" href="../main.html"><img src="../files/images/logo/ЭТС 1_2 (FFCC00).png" width="200px" alt="Ошибка!"></a>
+            <div>
+                <a href="profile.html">Профиль</a>
+                <a href="applications.html">Отклики</a>
+                <a href="job_search.html">Вакансии</a>
+                <a href="support.html">Поддержка</a>
+            </div>
+        </div>
+        <div class="add_menu">
+            <div><img src="../files/images/icon/material-symbols_navigation-outline-rounded.png"><a class="city" href="#">Москва</a></div>
+            <a href="#"><img src="../files/images/icon/material-symbols_mail-outline-rounded.png" alt=""></a>
+            <a href="#"><img src="../files/images/icon/material-symbols_favorite-outline-rounded.png" alt=""></a>
+            <a href="#"><img src="../files/images/icon/material-symbols_notifications-outline-rounded.png" alt=""></a>
+            <button class="create_resume" onclick="window.location.href='create.html'">Создать резюме</button>
+        </div>
+        <div class="gorod"><img src="../files/images/icon/material-symbols_navigation-outline-rounded.png"><a class="city" href="#">Москва</a></div>
+        <input type="checkbox" id="burger-checkbox" class="burger-checkbox">
+        <label class="burger" for="burger-checkbox"></label>
+        <ul class="menu-list">
+            <div class="burger_icon">
+                <a href="#"><img src="../files/images/icon/material-symbols_mail-outline-rounded.png" alt=""></a>
+                <a href="#"><img src="../files/images/icon/material-symbols_favorite-outline-rounded.png" alt=""></a>
+                <a href="#"><img src="../files/images/icon/material-symbols_notifications-outline-rounded.png" alt=""></a>
+            </div>
+            <li><a href="profile.html" class="menu-item">Профиль</a></li>
+            <li><a href="applications.html" class="menu-item">Отклики</a></li>
+            <li><a href="job_search.html" class="menu-item">Вакансии</a></li>
+            <li><a href="support.html" class="menu-item">Поддержка</a></li>
+        </ul>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-12">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-4xl font-bold">Мои отклики</h1>
+            <span id="count-badge" class="text-sm text-gray-500 font-bold"></span>
+        </div>
+
+        <!-- tab toggle -->
+        <div class="flex bg-[#1a1a1a] border border-gray-800 rounded-2xl p-1 mb-8 inline-flex gap-1">
+            <button id="tab-mine" onclick="setTab('mine')"
+                class="px-6 py-2 rounded-xl text-sm font-bold bg-[#2196F3] text-white">
+                Мои отклики
+            </button>
+            <button id="tab-incoming" onclick="setTab('incoming')"
+                class="px-6 py-2 rounded-xl text-sm font-bold text-gray-400 hover:text-white">
+                Входящие (на мои вакансии)
+            </button>
+        </div>
+
+        <div id="list-mine" class="space-y-4"></div>
+        <div id="list-incoming" class="space-y-4 hidden"></div>
+    </main>
+
+    <footer>
+        <a href="../main.html"><img src="../files/images/logo/ЭТС 1_2 (FFCC00).png" width="200px" alt="Ошибка!"></a>
+        <p>© 2026 "ЭТС" Все права защищены.</p>
+        <div>
+            <a href="profile.html">Профиль</a>
+            <a href="applications.html">Отклики</a>
+            <a href="job_search.html">Вакансии</a>
+            <a href="support.html">Поддержка</a>
+        </div>
+    </footer>
+
+    <script>
+        const API = 'http://127.0.0.1:8000';
+        let currentTab = 'mine';
+
+        function setTab(tab) {
+            currentTab = tab;
+            document.getElementById('list-mine').classList.toggle('hidden', tab !== 'mine');
+            document.getElementById('list-incoming').classList.toggle('hidden', tab !== 'incoming');
+            document.getElementById('tab-mine').className     = tab === 'mine'     ? 'px-6 py-2 rounded-xl text-sm font-bold bg-[#2196F3] text-white' : 'px-6 py-2 rounded-xl text-sm font-bold text-gray-400 hover:text-white';
+            document.getElementById('tab-incoming').className = tab === 'incoming' ? 'px-6 py-2 rounded-xl text-sm font-bold bg-[#2196F3] text-white' : 'px-6 py-2 rounded-xl text-sm font-bold text-gray-400 hover:text-white';
+        }
+
+        function formatDate(str) {
+            if (!str) return '';
+            try { return new Date(str).toLocaleDateString('ru', { day: 'numeric', month: 'long', year: 'numeric' }); } catch { return str; }
+        }
+
+        // ── Мои отклики (localStorage) ──────────────────────────────────────
+        function loadMyApplications() {
+            const container = document.getElementById('list-mine');
+            const raw = localStorage.getItem('vw_my_applications');
+            const items = raw ? JSON.parse(raw) : [];
+
+            if (!items.length) {
+                container.innerHTML = `
+                    <div class="card p-10 text-center text-gray-500">
+                        <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-4 text-gray-700"></i>
+                        <p class="font-bold">Откликов пока нет</p>
+                        <p class="text-sm mt-1">Откликнитесь на вакансию со страницы поиска</p>
+                        <a href="job_search.html" class="inline-block mt-4 px-6 py-2.5 bg-[#2196F3] text-white text-sm font-bold rounded-xl hover:bg-[#1976D2]">
+                            Найти вакансии
+                        </a>
+                    </div>`;
+                lucide.createIcons(); return;
+            }
+
+            document.getElementById('count-badge').textContent = `Всего: ${items.length}`;
+            container.innerHTML = items.slice().reverse().map(app => `
+                <div class="card p-6 hover:border-[#2196F3]/50 transition-all">
+                    <div class="flex justify-between items-start gap-4">
+                        <div>
+                            <span class="text-xs font-bold text-[#2196F3] uppercase tracking-widest">Отклик отправлен</span>
+                            <h3 class="text-lg font-bold mt-1">${app.job_title || 'Вакансия'}</h3>
+                            <p class="text-sm text-gray-400 mt-1">${app.user_name} · ${app.phone}</p>
+                            ${app.message ? `<p class="text-sm text-gray-500 mt-2 italic">"${app.message}"</p>` : ''}
+                        </div>
+                        <div class="text-right flex-shrink-0">
+                            <span class="text-xs px-3 py-1 rounded-full bg-green-500/10 text-green-400 border border-green-500/20">Отправлен</span>
+                            <p class="text-xs text-gray-600 mt-2">${formatDate(app.created_at)}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ── Входящие отклики (backend) ───────────────────────────────────────
+        async function loadIncomingApplications() {
+            const container = document.getElementById('list-incoming');
+            container.innerHTML = '<div class="text-gray-500 text-sm">Загрузка...</div>';
+            try {
+                const res = await fetch(`${API}/api/applications`);
+                const data = await res.json();
+                const items = data.items || [];
+                if (!items.length) {
+                    container.innerHTML = `
+                        <div class="card p-10 text-center text-gray-500">
+                            <i data-lucide="mail-open" class="w-12 h-12 mx-auto mb-4 text-gray-700"></i>
+                            <p class="font-bold">Входящих откликов нет</p>
+                            <p class="text-sm mt-1">Создайте вакансию в кабинете работодателя</p>
+                        </div>`;
+                    lucide.createIcons(); return;
+                }
+                container.innerHTML = items.map(app => `
+                    <div class="card p-6 hover:border-[#2196F3]/50 transition-all">
+                        <div class="flex justify-between items-start gap-4">
+                            <div>
+                                <span class="text-xs font-bold text-[#2196F3] uppercase tracking-widest">Вакансия #${app.job_id}</span>
+                                <h3 class="text-lg font-bold mt-1">${app.job_title || '—'}</h3>
+                                <p class="text-sm text-gray-400 mt-1">${app.user_name} · ${app.phone}</p>
+                                ${app.message ? `<p class="text-sm text-gray-500 mt-2 italic">"${app.message}"</p>` : ''}
+                            </div>
+                            <p class="text-xs text-gray-600 flex-shrink-0">${formatDate(app.created_at)}</p>
+                        </div>
+                    </div>
+                `).join('');
+            } catch {
+                container.innerHTML = '<div class="text-gray-500 text-sm">Не удалось загрузить. Проверьте, что backend запущен.</div>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            loadMyApplications();
+            await loadIncomingApplications();
+        });
+    </script>
+</body>
+</html>

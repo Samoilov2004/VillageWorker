@@ -2,7 +2,11 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from backend.app.db import init_tables
 from backend.app.routes.jobs import router as jobs_router
+from backend.app.routes.user_jobs import router as user_jobs_router
+from backend.app.routes.applications import router as applications_router
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -10,7 +14,7 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
 )
 
-app = FastAPI(title="VillageWorker Backend", version="0.2.0")
+app = FastAPI(title="VillageWorker Backend", version="0.3.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -21,9 +25,16 @@ app.add_middleware(
 )
 
 
+@app.on_event("startup")
+def startup():
+    init_tables()
+
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
 
 app.include_router(jobs_router)
+app.include_router(user_jobs_router)
+app.include_router(applications_router)
