@@ -108,4 +108,6 @@ def serialize_job_card(row: dict) -> dict:
         "experience": job.get("experience"),
         "experience_text": format_experience(job.get("experience")),
         "short_description": make_short_description(job.get("description")),
+        "latitude": job.get("latitude"),
+        "longitude": job.get("longitude"),
     }

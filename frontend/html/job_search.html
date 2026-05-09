@@ -221,6 +221,62 @@
                 border-radius: 22px;
             }
         }
+
+        /* city banner */
+        #city-banner {
+            background: #141414;
+            border-bottom: 1px solid rgba(33,150,243,0.25);
+            padding: 10px 24px;
+        }
+
+        /* custom cluster icons */
+        .cluster-icon {
+            background: #2196F3;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        }
+
+        /* leaflet popup override for dark theme */
+        .leaflet-popup-content-wrapper {
+            background: #1a1a1a;
+            color: #fff;
+            border: 1px solid #333;
+            border-radius: 14px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+        }
+        .leaflet-popup-tip {
+            background: #1a1a1a;
+        }
+        .leaflet-popup-close-button {
+            color: #888 !important;
+        }
+
+        /* map legend */
+        .map-legend {
+            background: rgba(20,20,20,0.92);
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 11px;
+            max-width: 180px;
+            line-height: 1.8;
+        }
+        .map-legend-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(255,255,255,0.4);
+            margin-right: 6px;
+            vertical-align: middle;
+        }
     </style>
 </head>
 <body>
@@ -265,6 +321,26 @@
             <li><a href="#" class="menu-item">Поддержка</a></li>
         </ul>
     </header>
+
+    <!-- city detection banner -->
+    <div id="city-banner" class="hidden">
+        <div class="max-w-6xl mx-auto flex items-center justify-between gap-4 flex-wrap">
+            <div id="city-banner-ask" class="flex items-center gap-3">
+                <div class="w-2 h-2 rounded-full bg-[#2196F3] animate-pulse flex-shrink-0"></div>
+                <span class="text-sm text-gray-300">Ваш город — <strong id="detected-city-name" class="text-white">...</strong>?</span>
+            </div>
+            <div id="city-banner-change" class="hidden flex items-center gap-3 flex-1 min-w-[260px]">
+                <input id="city-input" type="text" placeholder="Введите название города..."
+                    class="flex-1 bg-[#262626] border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-[#2196F3]">
+                <button id="city-save-btn" class="text-sm font-bold text-white bg-[#2196F3] px-4 py-1.5 rounded-lg hover:bg-[#1976D2] whitespace-nowrap">Сохранить</button>
+                <button id="city-cancel-btn" class="text-sm text-gray-500 hover:text-white">Отмена</button>
+            </div>
+            <div id="city-banner-btns" class="flex items-center gap-2">
+                <button id="city-yes-btn" class="text-sm font-bold text-white bg-[#2196F3] px-4 py-1.5 rounded-lg hover:bg-[#1976D2]">Да, верно</button>
+                <button id="city-change-btn" class="text-sm font-bold text-gray-400 hover:text-white border border-gray-700 px-4 py-1.5 rounded-lg">Изменить</button>
+            </div>
+        </div>
+    </div>
 
     <main class="max-w-6xl mx-auto px-4 py-12">
         <div class="flex justify-between items-center mb-8">
@@ -319,10 +395,19 @@
 
                     <div id="filters-content" class="grid grid-cols-1 gap-8">
                     </div>
+
+                    <div class="space-y-3 mt-2">
+                        <h4 class="text-xs font-bold text-[#2196F3] uppercase tracking-widest">Зарплата от</h4>
+                        <div class="relative">
+                            <input type="number" id="salary-min-input" placeholder="Например: 30000" min="0"
+                                class="w-full bg-[#1f1f1f] border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#2196F3] pr-8">
+                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">₽</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="mt-8 pt-6 border-t border-gray-800 flex justify-between items-center">
-                    <button class="text-gray-500 hover:text-white text-sm font-bold">Сбросить</button>
+                    <button id="btn-reset-filters" class="text-gray-500 hover:text-white text-sm font-bold">Сбросить</button>
                     <button id="btn-apply-filter" class="bg-[#2196F3] text-white px-8 py-3 rounded-xl text-sm font-bold">Применить</button>
                 </div>
             </div>
@@ -412,6 +497,9 @@
     </footer>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <script>
         const API_BASE_URL = "http://127.0.0.1:8000";
 
@@ -419,12 +507,51 @@
         let mapInstance = null;
         let radiusCircle = null;
         let currentRadius = 15;
-        let mapMarkers = [];
+        let markerClusterGroup = null;
+        let userLocation = null;
+        let detectedCity = null;
+
+        const CATEGORY_COLORS = {
+            'Рабочий персонал/разнорабочие':           '#FF5722',
+            'Транспорт/доставка (водители/курьеры)':   '#03A9F4',
+            'Строительство/недвижимость (работы)':     '#FF9800',
+            'Логистика/склад/закупки':                 '#9C27B0',
+            'Производство/инженерия':                  '#4CAF50',
+            'IT/разработка':                           '#00BCD4',
+            'Медицина/фарма':                          '#E91E63',
+            'Образование':                             '#8BC34A',
+            'Охрана/безопасность':                     '#607D8B',
+            'Продажи/аккаунт-менеджмент':              '#FFC107',
+            'Административный персонал/офис':          '#3F51B5',
+            'Маркетинг/PR/контент':                    '#F06292',
+            'HoReCa (рестораны/отели)':                '#FF7043',
+            'HR/рекрутинг':                            '#26A69A',
+            'Аналитика/данные':                        '#7E57C2',
+            'Финансы/бухгалтерия':                     '#42A5F5',
+            'Поддержка/колл-центр':                    '#78909C',
+            'Дизайн/креатив':                          '#EC407A',
+            'Юриспруденция':                           '#8D6E63',
+        };
 
         const filterData = [
-            { title: "Образование", items: ["Среднее", "Среднее специальное", "Высшее"] },
-            { title: "Опыт работы", items: ["Без опыта", "1-3 года", "3-6 лет", "Более 6 лет"] },
-            { title: "Оборудование", items: ["Своя техника", "Предоставляется компанией"] }
+            {
+                key: "label",
+                title: "Категория",
+                items: Object.keys(CATEGORY_COLORS).map(l => ({
+                    label: l.replace(' (рестораны/отели)', '').replace(' (водители/курьеры)', '').replace(' (работы)', ''),
+                    value: l,
+                })),
+            },
+            {
+                key: "experience",
+                title: "Опыт работы",
+                items: [
+                    { label: "Без опыта", value: "0" },
+                    { label: "1–3 года",  value: "1" },
+                    { label: "3–6 лет",   value: "3" },
+                    { label: "Более 6 лет", value: "6" },
+                ],
+            },
         ];
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -432,7 +559,9 @@
             setupFilterPanel();
             setupSearch();
             setupModal();
+            setupCityBanner();
             lucide.createIcons();
+            await detectCity();
             await loadJobs();
         });
 
@@ -463,7 +592,23 @@
             };
 
             close.onclick = () => panel.classList.add('hidden');
-            apply.onclick = () => panel.classList.add('hidden');
+            apply.onclick = async () => {
+                panel.classList.add('hidden');
+                const q = document.getElementById('search-input').value.trim();
+                await loadJobs(q);
+            };
+
+            document.getElementById('btn-reset-filters')?.addEventListener('click', async () => {
+                document.querySelectorAll('[data-filter]').forEach(cb => { cb.checked = false; });
+                const salaryInput = document.getElementById('salary-min-input');
+                if (salaryInput) salaryInput.value = '';
+                document.getElementById('radius-input').value = 15;
+                document.getElementById('radius-val').textContent = '15 км';
+                currentRadius = 15;
+                updateRadiusOnMap();
+                panel.classList.add('hidden');
+                await loadJobs(document.getElementById('search-input').value.trim());
+            });
 
             document.onclick = (e) => {
                 if (!panel.contains(e.target) && e.target !== toggle) {
@@ -503,17 +648,28 @@
             });
         }
 
+        function buildSearchUrl(query) {
+            const params = new URLSearchParams();
+            if (query) params.set('q', query);
+
+            document.querySelectorAll('[data-filter="label"]:checked').forEach(cb => {
+                params.append('label', cb.value);
+            });
+            document.querySelectorAll('[data-filter="experience"]:checked').forEach(cb => {
+                params.append('experience', cb.value);
+            });
+            const salaryMin = document.getElementById('salary-min-input')?.value?.trim();
+            if (salaryMin) params.set('salary_min', salaryMin);
+
+            return `${API_BASE_URL}/api/jobs?${params.toString()}`;
+        }
+
         async function loadJobs(query = "") {
             const container = document.getElementById('view-list');
             container.innerHTML = '<div class="text-gray-400">Загрузка вакансий...</div>';
 
             try {
-                let url = `${API_BASE_URL}/api/jobs`;
-
-                if (query) {
-                    url += `?q=${encodeURIComponent(query)}`;
-                }
-
+                const url = buildSearchUrl(query);
                 const response = await fetch(url);
 
                 if (!response.ok) {
@@ -718,43 +874,220 @@
 
         function renderFilters() {
             const container = document.getElementById('filters-content');
-            container.innerHTML = filterData.map(cat => `
-                <div class="space-y-4">
+            container.innerHTML = filterData.map(cat => {
+                const dot = (val) => CATEGORY_COLORS[val]
+                    ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${CATEGORY_COLORS[val]};margin-right:6px;flex-shrink:0"></span>`
+                    : '';
+                return `
+                <div class="space-y-3">
                     <h4 class="text-xs font-bold text-[#2196F3] uppercase tracking-widest">${cat.title}</h4>
-                    <div class="grid grid-cols-1 gap-3">
+                    <div class="grid grid-cols-1 gap-2">
                         ${cat.items.map(item => `
-                            <label class="flex items-center space-x-3 cursor-pointer group">
-                                <input type="checkbox" class="custom-checkbox">
-                                <span class="text-gray-400 group-hover:text-white transition-colors text-sm font-medium">${item}</span>
+                            <label class="flex items-center gap-2 cursor-pointer group">
+                                <input type="checkbox" class="custom-checkbox flex-shrink-0"
+                                    data-filter="${cat.key}" value="${item.value}">
+                                <span class="flex items-center text-gray-400 group-hover:text-white transition-colors text-sm">
+                                    ${dot(item.value)}${item.label}
+                                </span>
                             </label>
                         `).join('')}
                     </div>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
+        }
+
+        function getJobColor(label) {
+            return CATEGORY_COLORS[label] || '#90A4AE';
+        }
+
+        function haversineKm(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) ** 2
+                + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         }
 
         function updateRadiusOnMap() {
             if (mapInstance && radiusCircle) {
                 radiusCircle.setRadius(currentRadius * 1000);
+                renderMapMarkers();
             }
-        }
-
-        function clearMapMarkers() {
-            mapMarkers.forEach(marker => marker.remove());
-            mapMarkers = [];
         }
 
         function renderMapMarkers() {
             if (!mapInstance) return;
 
-            clearMapMarkers();
+            if (!markerClusterGroup) {
+                markerClusterGroup = L.markerClusterGroup({
+                    maxClusterRadius: 50,
+                    spiderfyOnMaxZoom: true,
+                    showCoverageOnHover: false,
+                    iconCreateFunction(cluster) {
+                        const count = cluster.getChildCount();
+                        const size = count < 10 ? 34 : count < 100 ? 40 : 46;
+                        return L.divIcon({
+                            className: '',
+                            html: `<div class="cluster-icon" style="width:${size}px;height:${size}px">${count}</div>`,
+                            iconSize: [size, size],
+                            iconAnchor: [size / 2, size / 2],
+                        });
+                    },
+                });
+                mapInstance.addLayer(markerClusterGroup);
+            } else {
+                markerClusterGroup.clearLayers();
+            }
+
+            const center = radiusCircle ? radiusCircle.getLatLng() : null;
 
             jobs.forEach(job => {
-                if (typeof job.latitude === 'number' && typeof job.longitude === 'number') {
-                    const marker = L.marker([job.latitude, job.longitude]).addTo(mapInstance);
-                    marker.bindPopup(`<b>${job.title || 'Вакансия'}</b><br>${job.salary_text || 'Не указана'}`);
-                    mapMarkers.push(marker);
+                const lat = job.latitude;
+                const lon = job.longitude;
+                if (typeof lat !== 'number' || typeof lon !== 'number' || lat === 0 || lon === 0) return;
+
+                if (center) {
+                    const dist = haversineKm(center.lat, center.lng, lat, lon);
+                    if (dist > currentRadius) return;
                 }
+
+                const color = getJobColor(job.label);
+                const icon = L.divIcon({
+                    className: '',
+                    html: `<div style="width:14px;height:14px;background:${color};border:2px solid rgba(255,255,255,0.85);border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.55)"></div>`,
+                    iconSize: [14, 14],
+                    iconAnchor: [7, 7],
+                });
+
+                const marker = L.marker([lat, lon], { icon });
+                marker.bindPopup(
+                    `<div style="min-width:210px;padding:4px 2px">
+                        <div style="font-size:13px;font-weight:700;margin-bottom:3px;color:#fff">${job.title || 'Вакансия'}</div>
+                        <div style="font-size:12px;color:#aaa;margin-bottom:2px">${job.company || ''}</div>
+                        <div style="font-size:13px;font-weight:700;color:#2196F3;margin-bottom:10px">${job.salary_text || 'Не указана'}</div>
+                        <button onclick="openJob(${job.id})"
+                            style="background:#2196F3;color:white;border:none;padding:7px 0;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;width:100%">
+                            Подробнее
+                        </button>
+                    </div>`,
+                    { maxWidth: 260 }
+                );
+
+                markerClusterGroup.addLayer(marker);
+            });
+        }
+
+        // ── legend ────────────────────────────────────────────────────────────
+        function addMapLegend() {
+            const legend = L.control({ position: 'bottomright' });
+            legend.onAdd = () => {
+                const div = L.DomUtil.create('div', 'map-legend');
+                div.style.color = '#ccc';
+                const entries = Object.entries(CATEGORY_COLORS).slice(0, 8);
+                div.innerHTML = entries.map(([label, color]) => {
+                    const short = label.replace(' (рестораны/отели)', '').replace(' (водители/курьеры)', '').replace(' (работы)', '');
+                    return `<div><span class="map-legend-dot" style="background:${color}"></span>${short}</div>`;
+                }).join('') + '<div style="color:#555;margin-top:4px">и ещё...</div>';
+                return div;
+            };
+            legend.addTo(mapInstance);
+        }
+
+        // ── city detection ────────────────────────────────────────────────────
+        async function detectCity() {
+            const saved = localStorage.getItem('vw_city');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    userLocation = { lat: data.lat, lon: data.lon };
+                    detectedCity = data.city;
+                } catch {}
+                return;
+            }
+
+            try {
+                const pos = await new Promise((resolve, reject) =>
+                    navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 6000 })
+                );
+                const { latitude, longitude } = pos.coords;
+                userLocation = { lat: latitude, lon: longitude };
+
+                const res = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=ru`,
+                    { headers: { 'Accept-Language': 'ru' } }
+                );
+                const data = await res.json();
+                detectedCity = data.address?.city
+                    || data.address?.town
+                    || data.address?.village
+                    || data.address?.county
+                    || 'Ваш регион';
+            } catch {
+                userLocation = { lat: 55.7558, lon: 37.6173 };
+                detectedCity = 'Москва';
+            }
+
+            document.getElementById('detected-city-name').textContent = detectedCity;
+            document.getElementById('city-banner').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function setupCityBanner() {
+            document.getElementById('city-yes-btn').addEventListener('click', () => {
+                if (userLocation) {
+                    localStorage.setItem('vw_city', JSON.stringify({
+                        city: detectedCity,
+                        lat: userLocation.lat,
+                        lon: userLocation.lon,
+                    }));
+                }
+                document.getElementById('city-banner').classList.add('hidden');
+            });
+
+            document.getElementById('city-change-btn').addEventListener('click', () => {
+                document.getElementById('city-banner-ask').classList.add('hidden');
+                document.getElementById('city-banner-btns').classList.add('hidden');
+                document.getElementById('city-banner-change').classList.remove('hidden');
+                document.getElementById('city-input').focus();
+            });
+
+            document.getElementById('city-cancel-btn').addEventListener('click', () => {
+                document.getElementById('city-banner-ask').classList.remove('hidden');
+                document.getElementById('city-banner-btns').classList.remove('hidden');
+                document.getElementById('city-banner-change').classList.add('hidden');
+            });
+
+            document.getElementById('city-save-btn').addEventListener('click', async () => {
+                const cityName = document.getElementById('city-input').value.trim();
+                if (!cityName) return;
+                try {
+                    const res = await fetch(
+                        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cityName)}&format=json&limit=1&accept-language=ru`
+                    );
+                    const results = await res.json();
+                    if (results.length) {
+                        const { lat, lon, display_name } = results[0];
+                        const shortName = display_name.split(',')[0].trim();
+                        userLocation = { lat: parseFloat(lat), lon: parseFloat(lon) };
+                        detectedCity = shortName;
+                        localStorage.setItem('vw_city', JSON.stringify({
+                            city: shortName,
+                            lat: userLocation.lat,
+                            lon: userLocation.lon,
+                        }));
+                        if (mapInstance) {
+                            mapInstance.setView([userLocation.lat, userLocation.lon], 10);
+                            if (radiusCircle) radiusCircle.setLatLng([userLocation.lat, userLocation.lon]);
+                            renderMapMarkers();
+                        }
+                    }
+                } catch {}
+                document.getElementById('city-banner').classList.add('hidden');
+            });
+
+            document.getElementById('city-input').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') document.getElementById('city-save-btn').click();
             });
         }
 
@@ -776,16 +1109,27 @@
                 btnL.className = "flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold text-gray-500 hover:text-gray-300";
 
                 if (!mapInstance) {
-                    mapInstance = L.map('map').setView([55.7558, 37.6173], 10);
+                    const center = userLocation
+                        ? [userLocation.lat, userLocation.lon]
+                        : [55.7558, 37.6173];
 
-                    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(mapInstance);
+                    mapInstance = L.map('map').setView(center, 10);
 
-                    radiusCircle = L.circle([55.7558, 37.6173], {
+                    L.tileLayer(
+                        'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+                        { attribution: '© CartoDB © OpenStreetMap' }
+                    ).addTo(mapInstance);
+
+                    radiusCircle = L.circle(center, {
                         color: '#2196F3',
                         fillColor: '#2196F3',
-                        fillOpacity: 0.1,
-                        radius: currentRadius * 1000
+                        fillOpacity: 0.08,
+                        weight: 1.5,
+                        dashArray: '6 4',
+                        radius: currentRadius * 1000,
                     }).addTo(mapInstance);
+
+                    addMapLegend();
                 }
 
                 setTimeout(() => {

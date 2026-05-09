@@ -14,55 +14,114 @@ ML_BASE_URL = "http://127.0.0.1:8001"
 ML_SEARCH_ENDPOINT = f"{ML_BASE_URL}/api/ml/search"
 ML_SIMILAR_ENDPOINT = f"{ML_BASE_URL}/api/ml/recommend/similar"
 
-# ML search: pagination работает через top_k = limit + offset; ограничено схемой ML-сервиса
 _ML_SEARCH_MAX_TOP_K = 100
 
 
-# ─── helpers ──────────────────────────────────────────────────────────────────
+# ─── filter helpers ───────────────────────────────────────────────────────────
 
-def _sql_browse(limit: int, offset: int) -> list[dict]:
+def _build_filter_where(
+    label: list[str],
+    experience: list[str],
+    salary_min: int | None,
+) -> tuple[list[str], list]:
+    clauses: list[str] = []
+    params: list = []
+
+    if label:
+        placeholders = ",".join(["?"] * len(label))
+        clauses.append(f"label IN ({placeholders})")
+        params.extend(label)
+
+    if experience:
+        exp_parts: list[str] = []
+        for e in experience:
+            if e == "0":
+                exp_parts.append("(experience_min = 0 AND experience_max = 0)")
+            elif e in ("1", "3", "6"):
+                exp_parts.append(f"experience_min = {int(e)}")
+        if exp_parts:
+            clauses.append("(" + " OR ".join(exp_parts) + ")")
+
+    if salary_min is not None:
+        clauses.append("salary_min >= ?")
+        params.append(salary_min)
+
+    return clauses, params
+
+
+# ─── SQL helpers ──────────────────────────────────────────────────────────────
+
+def _sql_browse(
+    limit: int,
+    offset: int,
+    label: list[str] | None = None,
+    experience: list[str] | None = None,
+    salary_min: int | None = None,
+) -> list[dict]:
+    clauses, params = _build_filter_where(label or [], experience or [], salary_min)
+    where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
     conn = get_connection()
     try:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM jobs LIMIT ? OFFSET ?", (limit, offset))
-        return [serialize_job_card(dict(row)) for row in cursor.fetchall()]
-    finally:
-        conn.close()
-
-
-def _sql_search(query: str, limit: int, offset: int) -> list[dict]:
-    conn = get_connection()
-    try:
-        cursor = conn.cursor()
-        like = f"%{query}%"
         cursor.execute(
-            """
-            SELECT * FROM jobs
-            WHERE title       LIKE ?
-               OR description LIKE ?
-               OR company     LIKE ?
-               OR city        LIKE ?
-               OR label       LIKE ?
-            LIMIT ? OFFSET ?
-            """,
-            (like, like, like, like, like, limit, offset),
+            f"SELECT * FROM jobs {where} LIMIT ? OFFSET ?",
+            params + [limit, offset],
         )
         return [serialize_job_card(dict(row)) for row in cursor.fetchall()]
     finally:
         conn.close()
 
 
-def _fetch_jobs_by_ids(ordered_ids: list[int]) -> list[dict]:
-    """Вернуть вакансии из БД в том же порядке, что ordered_ids."""
-    if not ordered_ids:
-        return []
+def _sql_search(
+    query: str,
+    limit: int,
+    offset: int,
+    label: list[str] | None = None,
+    experience: list[str] | None = None,
+    salary_min: int | None = None,
+) -> list[dict]:
+    filter_clauses, filter_params = _build_filter_where(label or [], experience or [], salary_min)
+
+    search_clause = (
+        "(title LIKE ? OR description LIKE ? OR company LIKE ? OR city LIKE ? OR label LIKE ?)"
+    )
+    like = f"%{query}%"
+    search_params = [like, like, like, like, like]
+
+    all_clauses = [search_clause] + filter_clauses
+    where = "WHERE " + " AND ".join(all_clauses)
+
     conn = get_connection()
     try:
         cursor = conn.cursor()
-        placeholders = ",".join(["?"] * len(ordered_ids))
         cursor.execute(
-            f"SELECT * FROM jobs WHERE id IN ({placeholders})",
-            ordered_ids,
+            f"SELECT * FROM jobs {where} LIMIT ? OFFSET ?",
+            search_params + filter_params + [limit, offset],
+        )
+        return [serialize_job_card(dict(row)) for row in cursor.fetchall()]
+    finally:
+        conn.close()
+
+
+def _fetch_jobs_by_ids(
+    ordered_ids: list[int],
+    label: list[str] | None = None,
+    experience: list[str] | None = None,
+    salary_min: int | None = None,
+) -> list[dict]:
+    if not ordered_ids:
+        return []
+    filter_clauses, filter_params = _build_filter_where(label or [], experience or [], salary_min)
+    id_placeholders = ",".join(["?"] * len(ordered_ids))
+    all_clauses = [f"id IN ({id_placeholders})"] + filter_clauses
+    where = "WHERE " + " AND ".join(all_clauses)
+
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            f"SELECT * FROM jobs {where}",
+            list(ordered_ids) + filter_params,
         )
         by_id = {dict(row)["id"]: serialize_job_card(dict(row)) for row in cursor.fetchall()}
         return [by_id[jid] for jid in ordered_ids if jid in by_id]
@@ -72,11 +131,14 @@ def _fetch_jobs_by_ids(ordered_ids: list[int]) -> list[dict]:
 
 # ─── ML calls ─────────────────────────────────────────────────────────────────
 
-async def _ml_search(query: str, limit: int, offset: int) -> list[dict] | None:
-    """
-    Вернуть список job-карточек через ML-поиск или None при ошибке/недоступности.
-    Пагинация: запрашиваем top_k = limit + offset, срезаем [offset:offset+limit].
-    """
+async def _ml_search(
+    query: str,
+    limit: int,
+    offset: int,
+    label: list[str] | None = None,
+    experience: list[str] | None = None,
+    salary_min: int | None = None,
+) -> list[dict] | None:
     top_k = limit + offset
     if top_k > _ML_SEARCH_MAX_TOP_K:
         logger.debug(
@@ -94,7 +156,6 @@ async def _ml_search(query: str, limit: int, offset: int) -> list[dict] | None:
             response.raise_for_status()
             raw = response.json().get("results", [])
 
-        # парсим ID и смещаем страницу
         all_ids: list[int] = []
         for item in raw:
             try:
@@ -103,7 +164,12 @@ async def _ml_search(query: str, limit: int, offset: int) -> list[dict] | None:
                 continue
 
         page_ids = all_ids[offset: offset + limit]
-        items = _fetch_jobs_by_ids(page_ids)
+        items = _fetch_jobs_by_ids(
+            page_ids,
+            label=label,
+            experience=experience,
+            salary_min=salary_min,
+        )
 
         logger.info(
             "search q=%r: ML вернул %d результатов, в БД найдено %d (offset=%d limit=%d)",
@@ -130,18 +196,23 @@ async def get_jobs(
     limit: int = 20,
     offset: int = 0,
     q: str | None = Query(default=None, description="Поисковый запрос"),
+    label: list[str] = Query(default=[], description="Фильтр по категории (можно несколько)"),
+    experience: list[str] = Query(default=[], description="Фильтр по опыту: 0, 1, 3, 6"),
+    salary_min: int | None = Query(default=None, description="Минимальная зарплата"),
 ):
+    filters = dict(label=label or None, experience=experience or None, salary_min=salary_min)
+
     if q and q.strip():
         query = q.strip()
-        ml_items = await _ml_search(query, limit, offset)
+        ml_items = await _ml_search(query, limit, offset, **filters)
         if ml_items is not None:
             return {"count": len(ml_items), "items": ml_items, "source": "ml"}
 
-        fallback_items = _sql_search(query, limit, offset)
+        fallback_items = _sql_search(query, limit, offset, **filters)
         logger.debug("search q=%r: возвращаем SQL fallback (%d)", query, len(fallback_items))
         return {"count": len(fallback_items), "items": fallback_items, "source": "fallback"}
 
-    items = _sql_browse(limit, offset)
+    items = _sql_browse(limit, offset, **filters)
     return {"count": len(items), "items": items}
 
 
