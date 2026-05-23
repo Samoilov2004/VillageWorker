@@ -77,7 +77,7 @@ class ModerationService:
         labels: Dict[str, float] = {
             "spam": self._ml_spam_score(text),
             "fraud": 0.0,
-            "banned": 0.0,
+            "drugs": 0.0,
             "toxicity": 0.0,
         }
 
@@ -85,7 +85,7 @@ class ModerationService:
         if self.URL_PATTERN.search(text):
             labels["fraud"] = min(labels["fraud"] + 0.15, 1.0)
 
-        labels["banned"] += self._score_patterns(text, self.BANNED_PATTERNS, 1.0)
+        labels["drugs"] += self._score_patterns(text, self.BANNED_PATTERNS, 1.0)
         labels["toxicity"] += self._score_patterns(text, self.TOXIC_PATTERNS, 0.4)
 
         labels = {k: round(min(v, 1.0), 4) for k, v in labels.items()}
@@ -95,14 +95,14 @@ class ModerationService:
             reasons.append("обнаружены признаки спама")
         if labels["fraud"] >= 0.5:
             reasons.append("обнаружены признаки мошеннического контента")
-        if labels["banned"] > 0:
+        if labels["drugs"] > 0:
             reasons.append("обнаружены запрещённые слова")
         if labels["toxicity"] >= 0.4:
             reasons.append("обнаружены признаки токсичного контента")
 
         risk_score = round(max(labels.values()), 4)
 
-        has_banned_words = labels["banned"] > 0
+        has_banned_words = labels["drugs"] > 0
         ml_ok = labels["spam"] < 0.6
 
         if has_banned_words:
