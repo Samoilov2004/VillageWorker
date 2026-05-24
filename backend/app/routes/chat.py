@@ -61,17 +61,6 @@ def row_to_dict(row) -> Optional[dict]:
     return dict(row)
 
 
-def get_dialog(dialog_id: int) -> Optional[dict]:
-    conn = get_connection()
-
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM chat_dialogs WHERE id = ?", (dialog_id,))
-        return row_to_dict(cursor.fetchone())
-    finally:
-        conn.close()
-
-
 def get_message(message_id: int) -> Optional[dict]:
     conn = get_connection()
 
@@ -123,7 +112,6 @@ def create_message_in_db(dialog_id: int, sender_id: int, text: str) -> dict:
         """, (dialog_id, sender_id, clean_text))
 
         conn.commit()
-
         message_id = cursor.lastrowid
     finally:
         conn.close()

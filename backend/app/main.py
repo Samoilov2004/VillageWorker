@@ -7,14 +7,18 @@ from backend.app.db import init_tables
 from backend.app.routes.jobs import router as jobs_router
 from backend.app.routes.user_jobs import router as user_jobs_router
 from backend.app.routes.applications import router as applications_router
+from backend.app.routes.chat import router as chat_router
+
 
 logging.basicConfig(
     level=logging.DEBUG,
-    format="%(asctime)s  %(levelname)-8s  %(name)s  %(message)s",
+    format="%(asctime)s %(levelname)-8s %(name)s %(message)s",
     datefmt="%H:%M:%S",
 )
 
-app = FastAPI(title="VillageWorker Backend", version="0.3.0")
+
+app = FastAPI(title="VillageWorker Backend", version="0.4.0")
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -38,3 +42,4 @@ def health():
 app.include_router(jobs_router)
 app.include_router(user_jobs_router)
 app.include_router(applications_router)
+app.include_router(chat_router)

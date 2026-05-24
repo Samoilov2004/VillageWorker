@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>ЭТС / Чат</title>
+
+  <link rel="stylesheet" href="../css/chat.css" />
+</head>
+<body>
+  <div class="chat-page">
+    <header class="chat-topbar">
+      <div class="chat-brand">
+        <div class="chat-logo">ЭТС</div>
+        <div>
+          <h1>Сообщения</h1>
+          <p>Чат между соискателем и работодателем</p>
+        </div>
+      </div>
+
+      <div class="chat-role-switch">
+        <span>Демо-роль:</span>
+
+        <button class="role-btn" id="applicantRoleBtn" type="button">
+          Соискатель
+        </button>
+
+        <button class="role-btn" id="employerRoleBtn" type="button">
+          Работодатель
+        </button>
+      </div>
+    </header>
+
+    <main class="messenger">
+      <aside class="dialogs-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Диалоги</h2>
+            <p id="currentUserLabel">Пользователь</p>
+          </div>
+
+          <button class="small-btn" id="createDemoDialogBtn" type="button">
+            + Демо
+          </button>
+        </div>
+
+        <div class="dialogs-list" id="dialogsList">
+          <div class="empty-state">Загрузка диалогов...</div>
+        </div>
+      </aside>
+
+      <section class="chat-panel">
+        <div class="chat-header" id="chatHeader">
+          <div>
+            <h2>Выберите диалог</h2>
+            <p>История переписки появится здесь</p>
+          </div>
+
+          <span class="connection-status" id="connectionStatus">
+            Не подключено
+          </span>
+        </div>
+
+        <div class="messages" id="messagesList">
+          <div class="welcome-card">
+            <div class="welcome-icon">💬</div>
+            <h3>Коммуникационный модуль</h3>
+            <p>
+              Здесь соискатель и работодатель могут обмениваться сообщениями,
+              уточнять условия вакансии и сохранять историю переписки.
+            </p>
+          </div>
+        </div>
+
+        <form class="message-form" id="messageForm">
+          <textarea
+            id="messageInput"
+            placeholder="Введите сообщение..."
+            rows="1"
+            disabled
+          ></textarea>
+
+          <button id="sendMessageBtn" type="submit" disabled>
+            Отправить
+          </button>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <script src="../js/chat.js"></script>
+</body>
+</html>
